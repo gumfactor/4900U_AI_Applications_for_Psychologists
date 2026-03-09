@@ -306,7 +306,24 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     @app.post("/api/notes/save-draft")
     def save_draft(request_body: SaveDraftRequest) -> dict:
         inferred_metadata = None
-        if request_body.metadata_reviewed:
+        try:
+            inferred_metadata = ai_service.infer_note_metadata(
+                title=request_body.title,
+                content=request_body.content,
+                source_refs=request_body.source_refs,
+            )
+        except (RuntimeError, ValueError):
+            inferred_metadata = None
+        if inferred_metadata:
+            note_kind = request_body.note_kind or inferred_metadata["note_kind"]
+            topics = _merge_metadata_lists(request_body.topics, inferred_metadata["topics"])
+            people = _merge_metadata_lists(request_body.people, inferred_metadata["people"])
+            sources = _merge_metadata_lists(request_body.sources, inferred_metadata["sources"])
+            projects = _merge_metadata_lists(request_body.projects, inferred_metadata["projects"])
+            tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
+            source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
+            used_ai_metadata = bool(inferred_metadata.get("model"))
+        else:
             note_kind = request_body.note_kind
             topics = request_body.topics
             people = request_body.people
@@ -314,34 +331,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             projects = request_body.projects
             tags = request_body.tags
             source_refs = request_body.source_refs
-            used_ai_metadata = settings.ai_enabled
-        else:
-            try:
-                inferred_metadata = ai_service.infer_note_metadata(
-                    title=request_body.title,
-                    content=request_body.content,
-                    source_refs=request_body.source_refs,
-                )
-            except (RuntimeError, ValueError):
-                inferred_metadata = None
-            if inferred_metadata:
-                note_kind = request_body.note_kind or inferred_metadata["note_kind"]
-                topics = _merge_metadata_lists(request_body.topics, inferred_metadata["topics"])
-                people = _merge_metadata_lists(request_body.people, inferred_metadata["people"])
-                sources = _merge_metadata_lists(request_body.sources, inferred_metadata["sources"])
-                projects = _merge_metadata_lists(request_body.projects, inferred_metadata["projects"])
-                tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
-                source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
-                used_ai_metadata = bool(inferred_metadata.get("model"))
-            else:
-                note_kind = request_body.note_kind
-                topics = request_body.topics
-                people = request_body.people
-                sources = request_body.sources
-                projects = request_body.projects
-                tags = request_body.tags
-                source_refs = request_body.source_refs
-                used_ai_metadata = False
+            used_ai_metadata = False
         note = note_repository.save_draft(
             title=request_body.title,
             note_kind=note_kind,
@@ -354,7 +344,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             content=request_body.content,
             ai_assisted=request_body.ai_assisted or used_ai_metadata,
         )
-        if inferred_metadata and used_ai_metadata and not request_body.metadata_reviewed:
+        if inferred_metadata and used_ai_metadata:
             log_service.write_log(
                 task="metadata_extraction",
                 prompt_slug=str(inferred_metadata["prompt_slug"]),

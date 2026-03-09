@@ -91,60 +91,12 @@
     const newNoteForm = document.getElementById("new-note-form");
     const newNoteFeedback = document.getElementById("new-note-feedback");
     const aiEnabled = {{ "true" if ai_enabled else "false" }};
-    let lastMetadataSignature = null;
 
     function splitCsv(value) {
         return (value || "").split(",").map((x) => x.trim()).filter(Boolean);
     }
 
-    function uniqueMerge(primary, secondary) {
-        const merged = [];
-        const seen = new Set();
-        for (const value of [...primary, ...secondary]) {
-            if (!value || seen.has(value)) {
-                continue;
-            }
-            seen.add(value);
-            merged.push(value);
-        }
-        return merged;
-    }
-
-    function buildMetadataSignature(formData) {
-        return JSON.stringify({
-            title: String(formData.get("title") || "").trim(),
-            content: String(formData.get("content") || "").trim(),
-            source_refs: splitCsv(formData.get("source_refs"))
-        });
-    }
-
-    async function inferMetadata(formData) {
-        const response = await fetch("/api/notes/infer-metadata", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                title: formData.get("title"),
-                content: formData.get("content") || "",
-                source_refs: splitCsv(formData.get("source_refs"))
-            })
-        });
-        return { ok: response.ok, data: await response.json() };
-    }
-
-    function applyInferredMetadata(formData, inferred) {
-        const noteKindField = newNoteForm.querySelector('[name="note_kind"]');
-        if (!noteKindField.value && inferred.note_kind) {
-            noteKindField.value = inferred.note_kind;
-        }
-        for (const fieldName of ["topics", "people", "sources", "projects", "tags", "source_refs"]) {
-            const field = newNoteForm.querySelector(`[name="${fieldName}"]`);
-            const currentValues = splitCsv(formData.get(fieldName));
-            const inferredValues = Array.isArray(inferred[fieldName]) ? inferred[fieldName] : [];
-            field.value = uniqueMerge(currentValues, inferredValues).join(", ");
-        }
-    }
-
-    async function saveNote(formData, metadataReviewed) {
+    async function saveNote(formData) {
         const payload = {
             title: formData.get("title"),
             note_kind: formData.get("note_kind"),
@@ -155,8 +107,7 @@
             tags: splitCsv(formData.get("tags")),
             source_refs: splitCsv(formData.get("source_refs")),
             content: formData.get("content") || "",
-            ai_assisted: formData.get("ai_assisted") === "on",
-            metadata_reviewed: metadataReviewed
+            ai_assisted: formData.get("ai_assisted") === "on"
         };
         const response = await fetch("/api/notes/save-draft", {
             method: "POST",
@@ -179,21 +130,10 @@
     newNoteForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         const formData = new FormData(newNoteForm);
-        const metadataSignature = buildMetadataSignature(formData);
-        if (aiEnabled && metadataSignature !== lastMetadataSignature) {
-            const inferredResponse = await inferMetadata(formData);
-            if (!inferredResponse.ok) {
-                newNoteFeedback.textContent = `${inferredResponse.data.detail || "Could not infer metadata."} Saving with the fields currently entered.`;
-            } else if (!inferredResponse.data.ai_enabled) {
-                newNoteFeedback.textContent = "AI metadata inference is unavailable. Saving with the fields currently entered.";
-            } else {
-                applyInferredMetadata(formData, inferredResponse.data);
-                lastMetadataSignature = metadataSignature;
-                newNoteFeedback.textContent = "AI suggested note attributes. Review or edit them, then click Save Note again.";
-                return;
-            }
-        }
-        const saveResponse = await saveNote(formData, aiEnabled && metadataSignature === lastMetadataSignature);
+        newNoteFeedback.textContent = aiEnabled
+            ? "Saving note with AI attribute inference..."
+            : "Saving note...";
+        const saveResponse = await saveNote(formData);
         if (!saveResponse.ok) {
             const data = saveResponse.data;
             newNoteFeedback.textContent = data.detail || "Could not save note.";

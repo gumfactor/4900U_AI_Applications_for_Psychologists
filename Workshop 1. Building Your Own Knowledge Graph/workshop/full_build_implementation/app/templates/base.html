@@ -7,6 +7,49 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <div id="note-overlay" class="note-overlay hidden"></div>
+    <aside id="new-note-panel" class="note-panel hidden" aria-hidden="true">
+        <div class="note-panel-header">
+            <div>
+                <p class="eyebrow">Quick Capture</p>
+                <h2>Create A New Note</h2>
+            </div>
+            <button id="close-note-panel" class="ghost-button" type="button">Close</button>
+        </div>
+        <form id="new-note-form" class="note-form">
+            <label>Title
+                <input name="title" type="text" required>
+            </label>
+            <label>Topic
+                <input name="topic" type="text" placeholder="Primary topic or theme">
+            </label>
+            <label>Type
+                <select name="note_type">
+                    <option value="concept">concept</option>
+                    <option value="source">source</option>
+                    <option value="person">person</option>
+                    <option value="project">project</option>
+                </select>
+            </label>
+            <label>Tags
+                <input name="tags" type="text" placeholder="Comma separated tags">
+            </label>
+            <label>Source References
+                <input name="source_refs" type="text" placeholder="Comma separated source refs">
+            </label>
+            <label>Main Body
+                <textarea name="content" rows="14" placeholder="Write the note body here. If you paste unstructured text, the app will wrap it into the standard note sections."></textarea>
+            </label>
+            <label class="inline-checkbox">
+                <input name="ai_assisted" type="checkbox">
+                Mark as AI-assisted
+            </label>
+            <div class="note-panel-actions">
+                <button type="submit">Save Note</button>
+            </div>
+        </form>
+        <p id="new-note-feedback" class="muted-text"></p>
+    </aside>
     <header class="site-header">
         <div>
             <p class="eyebrow">Instructor Demo</p>
@@ -17,10 +60,54 @@
             <a href="/sources">Sources</a>
             <a href="/ai">AI Tasks</a>
             <a href="/logs">Logs</a>
+            <button id="open-note-panel" class="nav-button" type="button">New Note</button>
         </nav>
     </header>
     <main class="page-shell">
         {% block content %}{% endblock %}
     </main>
+    <script>
+    const notePanel = document.getElementById("new-note-panel");
+    const noteOverlay = document.getElementById("note-overlay");
+    const openNotePanel = document.getElementById("open-note-panel");
+    const closeNotePanel = document.getElementById("close-note-panel");
+    const newNoteForm = document.getElementById("new-note-form");
+    const newNoteFeedback = document.getElementById("new-note-feedback");
+
+    function setNotePanelOpen(isOpen) {
+        notePanel?.classList.toggle("hidden", !isOpen);
+        noteOverlay?.classList.toggle("hidden", !isOpen);
+        notePanel?.setAttribute("aria-hidden", String(!isOpen));
+    }
+
+    openNotePanel?.addEventListener("click", () => setNotePanelOpen(true));
+    closeNotePanel?.addEventListener("click", () => setNotePanelOpen(false));
+    noteOverlay?.addEventListener("click", () => setNotePanelOpen(false));
+
+    newNoteForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(newNoteForm);
+        const payload = {
+            title: formData.get("title"),
+            topic: formData.get("topic") || null,
+            note_type: formData.get("note_type"),
+            tags: (formData.get("tags") || "").split(",").map((x) => x.trim()).filter(Boolean),
+            source_refs: (formData.get("source_refs") || "").split(",").map((x) => x.trim()).filter(Boolean),
+            content: formData.get("content") || "",
+            ai_assisted: formData.get("ai_assisted") === "on"
+        };
+        const response = await fetch("/api/notes/save-draft", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            newNoteFeedback.textContent = data.detail || "Could not save note.";
+            return;
+        }
+        window.location.href = `/notes/${data.slug}`;
+    });
+    </script>
 </body>
 </html>

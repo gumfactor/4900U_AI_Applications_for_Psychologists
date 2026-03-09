@@ -59,6 +59,7 @@
             <h4>Save Draft Note</h4>
             <form id="save-draft-form">
                 <label>Title <input name="title" type="text" required></label>
+                <label>Topic <input name="topic" type="text"></label>
                 <label>Type
                     <select name="note_type">
                         <option value="concept">concept</option>
@@ -109,10 +110,11 @@ aiForm?.addEventListener("submit", async (event) => {
 saveForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(saveForm);
-  const payload = {
-    title: formData.get("title"),
-    note_type: formData.get("note_type"),
-    tags: (formData.get("tags") || "").split(",").map((x) => x.trim()).filter(Boolean),
+    const payload = {
+        title: formData.get("title"),
+        topic: formData.get("topic") || null,
+        note_type: formData.get("note_type"),
+        tags: (formData.get("tags") || "").split(",").map((x) => x.trim()).filter(Boolean),
     source_refs: (formData.get("source_refs") || "").split(",").map((x) => x.trim()).filter(Boolean),
     content: latestOutput,
     ai_assisted: true

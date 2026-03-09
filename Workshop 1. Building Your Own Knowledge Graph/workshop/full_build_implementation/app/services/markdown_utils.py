@@ -119,6 +119,7 @@ def ensure_note_body_structure(content: str) -> str:
 
 def build_note_markdown(
     title: str,
+    topic: str | None,
     note_type: str,
     source_refs: list[str],
     tags: list[str],
@@ -130,6 +131,7 @@ def build_note_markdown(
         "id": f"{note_type}-{slug}",
         "title": title,
         "type": note_type,
+        "topic": topic or None,
         "status": "ai-drafted" if ai_assisted else "captured",
         "tags": tags,
         "source_refs": source_refs,

@@ -2,6 +2,10 @@
 {% block content %}
 <section class="page-header">
     <div><p class="eyebrow">Note Browser</p><h2>Notes</h2></div>
+    <div class="status-card compact-card">
+        <strong>Create Notes</strong>
+        <p>Use the <code>New Note</code> button to open the slideout editor.</p>
+    </div>
 </section>
 <section class="grid two-up">
     {% for note in notes %}
@@ -10,6 +14,9 @@
             <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
             <span class="pill">{{ note.metadata.type }}</span>
         </div>
+        {% if note.metadata.topic %}
+        <p class="topic-label">Topic: {{ note.metadata.topic }}</p>
+        {% endif %}
         <p>{{ note.summary }}</p>
         <div class="meta-row">
             <span>Status: {{ note.metadata.status }}</span>

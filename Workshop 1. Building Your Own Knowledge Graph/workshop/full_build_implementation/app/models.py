@@ -15,6 +15,7 @@ class NoteMetadata(BaseModel):
     id: str
     title: str
     type: NoteType
+    topic: str | None = None
     status: NoteStatus
     tags: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
@@ -91,6 +92,7 @@ class AiLogEntry(BaseModel):
 
 class SaveDraftRequest(BaseModel):
     title: str
+    topic: str | None = None
     note_type: NoteType
     source_refs: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)

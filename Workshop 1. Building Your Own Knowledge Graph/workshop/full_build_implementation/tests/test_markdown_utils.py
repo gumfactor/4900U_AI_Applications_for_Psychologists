@@ -37,6 +37,7 @@ Summary text.
 def test_build_note_markdown_includes_required_sections() -> None:
     filename, markdown = build_note_markdown(
         title="Demo Note",
+        topic="Knowledge Work",
         note_type="concept",
         source_refs=["data/sources/example.md"],
         tags=["demo"],
@@ -44,5 +45,6 @@ def test_build_note_markdown_includes_required_sections() -> None:
         ai_assisted=True,
     )
     assert filename == "concept-demo-note.md"
+    assert "topic: Knowledge Work" in markdown
     assert "## Summary" in markdown
     assert "## Open Questions" in markdown

@@ -150,6 +150,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     def save_draft(request_body: SaveDraftRequest) -> dict:
         note = note_repository.save_draft(
             title=request_body.title,
+            topic=request_body.topic,
             note_type=request_body.note_type,
             source_refs=request_body.source_refs,
             tags=request_body.tags,

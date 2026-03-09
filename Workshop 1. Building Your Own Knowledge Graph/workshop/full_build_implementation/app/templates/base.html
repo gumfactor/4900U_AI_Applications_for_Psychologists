@@ -62,18 +62,20 @@
         <p id="new-note-feedback" class="muted-text"></p>
     </aside>
     <header class="site-header">
-        <div>
-            <p class="eyebrow">Instructor Demo</p>
-            <h1><a href="/notes">AI-Assisted Personal Knowledge Base</a></h1>
+        <div class="site-header-inner">
+            <div>
+                <p class="eyebrow">Instructor Demo</p>
+                <h1><a href="/notes">AI-Assisted Personal Knowledge Base</a></h1>
+            </div>
+            <nav>
+                <a href="/notes">Notes</a>
+                <a href="/stats">Stats</a>
+                <a href="/sources">Sources</a>
+                <a href="/ai">AI Tasks</a>
+                <a href="/logs">Logs</a>
+                <button id="open-note-panel" class="nav-button" type="button">New Note</button>
+            </nav>
         </div>
-        <nav>
-            <a href="/notes">Notes</a>
-            <a href="/stats">Stats</a>
-            <a href="/sources">Sources</a>
-            <a href="/ai">AI Tasks</a>
-            <a href="/logs">Logs</a>
-            <button id="open-note-panel" class="nav-button" type="button">New Note</button>
-        </nav>
     </header>
     <main class="page-shell">
         {% block content %}{% endblock %}

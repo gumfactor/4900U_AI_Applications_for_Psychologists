@@ -451,6 +451,7 @@ def _render_notes_page(
 ) -> HTMLResponse:
     view_mode = view if view in {"grid", "row"} else "grid"
     notes = note_repository.list_notes()
+    all_notes = notes
     if q:
         search = q.lower().strip()
         notes = [
@@ -472,13 +473,12 @@ def _render_notes_page(
         notes = [note for note in notes if source in note.metadata.sources]
     if project:
         notes = [note for note in notes if project in note.metadata.projects]
-    unique_notes = note_repository.list_notes()
     return templates.TemplateResponse(
         request,
         "notes.html",
         {
             "notes": notes,
-            "all_notes": unique_notes,
+            "filter_options": _build_filter_options(all_notes),
             "ai_enabled": settings.ai_enabled,
             "title": "Notes",
             "view_mode": view_mode,
@@ -507,6 +507,33 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
         seen.add(cleaned)
         merged.append(cleaned)
     return merged
+
+
+def _build_filter_options(notes: list) -> dict[str, list[str]]:
+    note_kinds = sorted({note.metadata.note_kind for note in notes if note.metadata.note_kind}, key=str.casefold)
+    topics = _collect_sorted_values(notes, "topics")
+    tags = _collect_sorted_values(notes, "tags")
+    people = _collect_sorted_values(notes, "people")
+    sources = _collect_sorted_values(notes, "sources")
+    projects = _collect_sorted_values(notes, "projects")
+    return {
+        "note_kinds": note_kinds,
+        "topics": topics,
+        "tags": tags,
+        "people": people,
+        "sources": sources,
+        "projects": projects,
+    }
+
+
+def _collect_sorted_values(notes: list, attribute_name: str) -> list[str]:
+    values: set[str] = set()
+    for note in notes:
+        for raw in getattr(note.metadata, attribute_name):
+            cleaned = str(raw).strip()
+            if cleaned:
+                values.add(cleaned)
+    return sorted(values, key=str.casefold)
 
 
 def _notes_for_entity(notes: list, kind: str, value: str) -> list:

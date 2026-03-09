@@ -48,6 +48,7 @@ def test_notes_and_stats_routes() -> None:
     assert row_notes_page.status_code == 200
     assert searched_notes_page.status_code == 200
     assert "AI Provenance Logging" in searched_notes_page.text
+    assert notes_page.text.count('<option value="Workshop Instructor"></option>') == 1
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
 

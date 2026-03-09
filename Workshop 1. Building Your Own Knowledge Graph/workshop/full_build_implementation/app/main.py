@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.config import Settings, get_settings
-from app.models import AiTaskRequest, DashboardSummary, SaveDraftRequest, UpdateNoteStatusRequest
+from app.models import AiTaskRequest, DashboardSummary, InferMetadataRequest, InferMetadataResponse, SaveDraftRequest, UpdateNoteStatusRequest
 from app.services.ai_service import AiService
 from app.services.gemini_client import GeminiClient
 from app.services.log_service import LogService
@@ -190,21 +190,61 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         except (RuntimeError, ValueError, FileNotFoundError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    @app.post("/api/notes/save-draft")
-    def save_draft(request_body: SaveDraftRequest) -> dict:
+    @app.post("/api/notes/infer-metadata")
+    def infer_metadata(request_body: InferMetadataRequest) -> InferMetadataResponse:
         inferred_metadata = ai_service.infer_note_metadata(
             title=request_body.title,
             content=request_body.content,
             source_refs=request_body.source_refs,
         )
-        note_kind = request_body.note_kind or inferred_metadata["note_kind"]
-        topics = _merge_metadata_lists(request_body.topics, inferred_metadata["topics"])
-        people = _merge_metadata_lists(request_body.people, inferred_metadata["people"])
-        sources = _merge_metadata_lists(request_body.sources, inferred_metadata["sources"])
-        projects = _merge_metadata_lists(request_body.projects, inferred_metadata["projects"])
-        tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
-        source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
-        used_ai_metadata = bool(inferred_metadata.get("model"))
+        if inferred_metadata.get("model"):
+            log_service.write_log(
+                task="metadata_extraction",
+                prompt_slug=str(inferred_metadata["prompt_slug"]),
+                model=str(inferred_metadata["model"]),
+                input_files=list(inferred_metadata["input_paths"]),
+                output_target="ui-preview",
+                review_outcome="pending-review",
+                notes="Metadata preview generated during note creation.",
+            )
+        return InferMetadataResponse(
+            note_kind=inferred_metadata["note_kind"],
+            topics=list(inferred_metadata["topics"]),
+            people=list(inferred_metadata["people"]),
+            sources=list(inferred_metadata["sources"]),
+            projects=list(inferred_metadata["projects"]),
+            tags=list(inferred_metadata["tags"]),
+            source_refs=list(inferred_metadata["source_refs"]),
+            ai_enabled=bool(inferred_metadata.get("model")),
+            model=inferred_metadata.get("model"),
+            prompt_slug=inferred_metadata.get("prompt_slug"),
+        )
+
+    @app.post("/api/notes/save-draft")
+    def save_draft(request_body: SaveDraftRequest) -> dict:
+        if request_body.metadata_reviewed:
+            note_kind = request_body.note_kind
+            topics = request_body.topics
+            people = request_body.people
+            sources = request_body.sources
+            projects = request_body.projects
+            tags = request_body.tags
+            source_refs = request_body.source_refs
+            used_ai_metadata = settings.ai_enabled
+        else:
+            inferred_metadata = ai_service.infer_note_metadata(
+                title=request_body.title,
+                content=request_body.content,
+                source_refs=request_body.source_refs,
+            )
+            note_kind = request_body.note_kind or inferred_metadata["note_kind"]
+            topics = _merge_metadata_lists(request_body.topics, inferred_metadata["topics"])
+            people = _merge_metadata_lists(request_body.people, inferred_metadata["people"])
+            sources = _merge_metadata_lists(request_body.sources, inferred_metadata["sources"])
+            projects = _merge_metadata_lists(request_body.projects, inferred_metadata["projects"])
+            tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
+            source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
+            used_ai_metadata = bool(inferred_metadata.get("model"))
         note = note_repository.save_draft(
             title=request_body.title,
             note_kind=note_kind,
@@ -217,7 +257,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             content=request_body.content,
             ai_assisted=request_body.ai_assisted or used_ai_metadata,
         )
-        if used_ai_metadata:
+        if used_ai_metadata and not request_body.metadata_reviewed:
             log_service.write_log(
                 task="metadata_extraction",
                 prompt_slug=str(inferred_metadata["prompt_slug"]),

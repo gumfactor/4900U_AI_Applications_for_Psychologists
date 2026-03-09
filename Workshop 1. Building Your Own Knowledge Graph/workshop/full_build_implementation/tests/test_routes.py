@@ -77,3 +77,19 @@ def test_ai_run_and_save_draft_routes() -> None:
     assert draft_response.json()["metadata"]["topics"] == ["Testing"]
     assert draft_response.json()["metadata"]["people"] == ["Test User"]
     assert "runtime" in draft_response.json()["metadata"]["tags"]
+
+
+def test_infer_metadata_route() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/infer-metadata",
+        json={
+            "title": "Metadata Test",
+            "content": "This note discusses PKB Design Principles and the Instructor Demo System.",
+            "source_refs": [],
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["ai_enabled"] is True
+    assert response.json()["note_kind"] == "brainstorming"
+    assert "Testing" in response.json()["topics"]

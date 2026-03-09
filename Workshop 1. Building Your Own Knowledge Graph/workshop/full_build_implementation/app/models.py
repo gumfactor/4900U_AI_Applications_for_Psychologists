@@ -104,6 +104,26 @@ class SaveDraftRequest(BaseModel):
     tags: list[str] = Field(default_factory=list)
     content: str
     ai_assisted: bool = True
+    metadata_reviewed: bool = False
+
+
+class InferMetadataRequest(BaseModel):
+    title: str
+    content: str
+    source_refs: list[str] = Field(default_factory=list)
+
+
+class InferMetadataResponse(BaseModel):
+    note_kind: NoteKind | str | None = None
+    topics: list[str] = Field(default_factory=list)
+    people: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    source_refs: list[str] = Field(default_factory=list)
+    ai_enabled: bool
+    model: str | None = None
+    prompt_slug: str | None = None
 
 
 class UpdateNoteStatusRequest(BaseModel):

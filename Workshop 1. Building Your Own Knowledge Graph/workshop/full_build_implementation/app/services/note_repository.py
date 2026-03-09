@@ -4,6 +4,7 @@ from pathlib import Path
 
 from app.models import Note
 from app.services.markdown_utils import (
+    build_note_document,
     build_note_markdown,
     bullet_lines,
     dump_frontmatter,
@@ -55,6 +56,44 @@ class NoteRepository:
         )
         path = self.notes_dir / filename
         path.write_text(markdown, encoding="utf-8")
+        return self._load_note(path)
+
+    def update_note(
+        self,
+        slug: str,
+        title: str,
+        note_kind: str | None,
+        topics: list[str],
+        people: list[str],
+        sources: list[str],
+        projects: list[str],
+        source_refs: list[str],
+        tags: list[str],
+        content: str,
+        status: str,
+        ai_assisted: bool,
+        human_reviewed: bool,
+    ) -> Note:
+        note = self.get_note(slug)
+        path = self.notes_dir / f"{note.slug}.md"
+        metadata = {
+            "id": note.metadata.id,
+            "title": title,
+            "status": status,
+            "topics": topics,
+            "people": people,
+            "sources": sources,
+            "projects": projects,
+            "tags": tags,
+            "source_refs": source_refs,
+            "created": note.metadata.created,
+            "updated": today_iso(),
+            "ai_assisted": ai_assisted,
+            "human_reviewed": human_reviewed,
+        }
+        if note_kind:
+            metadata["note_kind"] = note_kind
+        path.write_text(build_note_document(title, metadata, content), encoding="utf-8")
         return self._load_note(path)
 
     def update_status(self, slug: str, status: str, human_reviewed: bool) -> Note:

@@ -131,6 +131,21 @@ class UpdateNoteStatusRequest(BaseModel):
     human_reviewed: bool
 
 
+class UpdateNoteRequest(BaseModel):
+    title: str
+    note_kind: NoteKind | str | None = None
+    topics: list[str] = Field(default_factory=list)
+    people: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
+    source_refs: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    content: str
+    status: NoteStatus
+    ai_assisted: bool
+    human_reviewed: bool
+
+
 class DashboardSummary(BaseModel):
     total_notes: int
     total_sources: int

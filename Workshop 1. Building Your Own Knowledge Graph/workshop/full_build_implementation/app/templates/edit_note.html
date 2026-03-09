@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Edit Note</p>
+        <h2>{{ note.metadata.title }}</h2>
+    </div>
+    <div class="page-header-actions">
+        <a href="/notes/{{ note.slug }}" class="ghost-link">Back To Note</a>
+    </div>
+</section>
+<section class="panel">
+    <form id="edit-note-form" class="note-form">
+        <label>Title
+            <input name="title" type="text" value="{{ note.metadata.title }}" required>
+        </label>
+        <label>Note Kind
+            <select name="note_kind">
+                <option value="" {% if not note.metadata.note_kind %}selected{% endif %}>Select note kind (optional)</option>
+                <option value="synthesis" {% if note.metadata.note_kind == "synthesis" %}selected{% endif %}>synthesis</option>
+                <option value="reflection" {% if note.metadata.note_kind == "reflection" %}selected{% endif %}>reflection</option>
+                <option value="method-note" {% if note.metadata.note_kind == "method-note" %}selected{% endif %}>method-note</option>
+                <option value="brainstorming" {% if note.metadata.note_kind == "brainstorming" %}selected{% endif %}>brainstorming</option>
+            </select>
+        </label>
+        <label>Topics
+            <input name="topics" type="text" value="{{ note.metadata.topics | join(', ') }}">
+        </label>
+        <label>People
+            <input name="people" type="text" value="{{ note.metadata.people | join(', ') }}">
+        </label>
+        <label>Sources
+            <input name="sources" type="text" value="{{ note.metadata.sources | join(', ') }}">
+        </label>
+        <label>Projects
+            <input name="projects" type="text" value="{{ note.metadata.projects | join(', ') }}">
+        </label>
+        <label>Tags
+            <input name="tags" type="text" value="{{ note.metadata.tags | join(', ') }}">
+        </label>
+        <label>Source References
+            <input name="source_refs" type="text" value="{{ note.metadata.source_refs | join(', ') }}">
+        </label>
+        <label>Status
+            <select name="status">
+                <option value="captured" {% if note.metadata.status == "captured" %}selected{% endif %}>captured</option>
+                <option value="ai-drafted" {% if note.metadata.status == "ai-drafted" %}selected{% endif %}>ai-drafted</option>
+                <option value="reviewed" {% if note.metadata.status == "reviewed" %}selected{% endif %}>reviewed</option>
+                <option value="final" {% if note.metadata.status == "final" %}selected{% endif %}>final</option>
+            </select>
+        </label>
+        <label>Main Body
+            <textarea name="content" rows="20" required>{{ note.raw_body }}</textarea>
+        </label>
+        <label class="inline-checkbox">
+            <input name="ai_assisted" type="checkbox" {% if note.metadata.ai_assisted %}checked{% endif %}>
+            Mark note content as AI-assisted
+        </label>
+        <label class="inline-checkbox">
+            <input name="human_reviewed" type="checkbox" {% if note.metadata.human_reviewed %}checked{% endif %}>
+            Mark as human reviewed
+        </label>
+        <div class="note-panel-actions">
+            <button type="submit" class="inline-button">Save Changes</button>
+        </div>
+        <p id="edit-note-feedback" class="muted-text"></p>
+    </form>
+</section>
+<script>
+const editNoteForm = document.getElementById("edit-note-form");
+const editNoteFeedback = document.getElementById("edit-note-feedback");
+
+function splitCsv(value) {
+  return (value || "").split(",").map((x) => x.trim()).filter(Boolean);
+}
+
+editNoteForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(editNoteForm);
+  const payload = {
+    title: formData.get("title"),
+    note_kind: formData.get("note_kind") || null,
+    topics: splitCsv(formData.get("topics")),
+    people: splitCsv(formData.get("people")),
+    sources: splitCsv(formData.get("sources")),
+    projects: splitCsv(formData.get("projects")),
+    tags: splitCsv(formData.get("tags")),
+    source_refs: splitCsv(formData.get("source_refs")),
+    content: formData.get("content") || "",
+    status: formData.get("status"),
+    ai_assisted: formData.get("ai_assisted") === "on",
+    human_reviewed: formData.get("human_reviewed") === "on"
+  };
+  const response = await fetch("/api/notes/{{ note.slug }}", {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    editNoteFeedback.textContent = data.detail || "Could not update note.";
+    return;
+  }
+  window.location.href = `/notes/${data.slug}`;
+});
+</script>
+{% endblock %}

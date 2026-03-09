@@ -9,7 +9,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.config import Settings, get_settings
-from app.models import AiTaskRequest, DashboardSummary, InferMetadataRequest, InferMetadataResponse, SaveDraftRequest, UpdateNoteStatusRequest
+from app.models import (
+    AiTaskRequest,
+    DashboardSummary,
+    InferMetadataRequest,
+    InferMetadataResponse,
+    SaveDraftRequest,
+    UpdateNoteRequest,
+    UpdateNoteStatusRequest,
+)
 from app.services.ai_service import AiService
 from app.services.gemini_client import GeminiClient
 from app.services.log_service import LogService
@@ -111,6 +119,22 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return templates.TemplateResponse(
             request, "note_detail.html", {"note": note, "ai_enabled": settings.ai_enabled, "title": note.metadata.title}
+        )
+
+    @app.get("/notes/{slug}/edit", response_class=HTMLResponse)
+    def edit_note_page(request: Request, slug: str) -> HTMLResponse:
+        try:
+            note = note_repository.get_note(slug)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return templates.TemplateResponse(
+            request,
+            "edit_note.html",
+            {
+                "note": note,
+                "ai_enabled": settings.ai_enabled,
+                "title": f"Edit {note.metadata.title}",
+            },
         )
 
     @app.get("/sources", response_class=HTMLResponse)
@@ -284,6 +308,37 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             note = note_repository.update_status(slug, request_body.status, request_body.human_reviewed)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return note.model_dump()
+
+    @app.put("/api/notes/{slug}")
+    def update_note(slug: str, request_body: UpdateNoteRequest) -> dict:
+        try:
+            note = note_repository.update_note(
+                slug=slug,
+                title=request_body.title,
+                note_kind=request_body.note_kind,
+                topics=request_body.topics,
+                people=request_body.people,
+                sources=request_body.sources,
+                projects=request_body.projects,
+                source_refs=request_body.source_refs,
+                tags=request_body.tags,
+                content=request_body.content,
+                status=request_body.status,
+                ai_assisted=request_body.ai_assisted,
+                human_reviewed=request_body.human_reviewed,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        log_service.write_log(
+            task="update_note",
+            prompt_slug="manual-edit",
+            model="n/a",
+            input_files=note.metadata.source_refs,
+            output_target=note.path,
+            review_outcome="updated",
+            notes="Existing note edited in UI.",
+        )
         return note.model_dump()
 
     @app.exception_handler(404)

@@ -2,10 +2,13 @@
 {% block content %}
 <section class="page-header">
     <div><p class="eyebrow">{{ note.metadata.note_kind or "note" }}</p><h2>{{ note.metadata.title }}</h2></div>
-    <div class="status-card">
-        <strong>Status</strong>
-        <p>{{ note.metadata.status }}</p>
-        <p>Human reviewed: {{ "yes" if note.metadata.human_reviewed else "no" }}</p>
+    <div class="page-header-actions">
+        <div class="status-card">
+            <strong>Status</strong>
+            <p>{{ note.metadata.status }}</p>
+            <p>Human reviewed: {{ "yes" if note.metadata.human_reviewed else "no" }}</p>
+        </div>
+        <a href="/notes/{{ note.slug }}/edit" class="ghost-link">Edit Note</a>
     </div>
 </section>
 <section class="grid two-up">

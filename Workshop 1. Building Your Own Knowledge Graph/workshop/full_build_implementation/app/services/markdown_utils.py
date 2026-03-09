@@ -171,9 +171,13 @@ def build_note_markdown(
     }
     if note_kind:
         metadata["note_kind"] = note_kind
-    note_body = ensure_note_body_structure(content)
-    markdown = f"---\n{dump_frontmatter(metadata)}\n---\n\n# {title}\n\n{note_body}\n"
+    markdown = build_note_document(title, metadata, content)
     return f"note-{slug}.md", markdown
+
+
+def build_note_document(title: str, metadata: dict[str, Any], content: str) -> str:
+    note_body = ensure_note_body_structure(content)
+    return f"---\n{dump_frontmatter(metadata)}\n---\n\n# {title}\n\n{note_body}\n"
 
 
 def note_title_from_path(path: Path) -> str:

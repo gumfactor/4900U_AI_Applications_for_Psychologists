@@ -93,3 +93,29 @@ def test_infer_metadata_route() -> None:
     assert response.json()["ai_enabled"] is True
     assert response.json()["note_kind"] == "brainstorming"
     assert "Testing" in response.json()["topics"]
+
+
+def test_edit_note_routes() -> None:
+    client = build_test_client()
+    edit_page = client.get("/notes/concept-personal-knowledge-base/edit")
+    assert edit_page.status_code == 200
+    update_response = client.put(
+        "/api/notes/concept-personal-knowledge-base",
+        json={
+            "title": "Edited PKB Note",
+            "note_kind": "reflection",
+            "topics": ["Edited Topic"],
+            "people": ["Workshop Instructor"],
+            "sources": ["PKB Design Principles"],
+            "projects": ["Instructor Demo System"],
+            "source_refs": ["data/sources/source-pkb-design-principles.md"],
+            "tags": ["edited"],
+            "content": "Edited note body.",
+            "status": "reviewed",
+            "ai_assisted": True,
+            "human_reviewed": True,
+        },
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["metadata"]["title"] == "Edited PKB Note"
+    assert update_response.json()["metadata"]["status"] == "reviewed"

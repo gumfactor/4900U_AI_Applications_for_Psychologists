@@ -118,11 +118,13 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             note = note_repository.get_note(slug)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        related_logs = _logs_for_note(log_service.list_logs(), note.path)
         return templates.TemplateResponse(
             request,
             "note_detail.html",
             {
                 "note": note,
+                "related_logs": related_logs,
                 "ai_enabled": settings.ai_enabled,
                 "title": note.metadata.title,
                 "build_explore_href": _build_explore_href,
@@ -498,6 +500,10 @@ def _build_related_counts(notes: list, active_kind: str, active_value: str) -> d
 
 def _build_explore_href(kind: str, value: str) -> str:
     return f"/explore?kind={quote(kind)}&value={quote(value)}"
+
+
+def _logs_for_note(logs: list, note_path: str) -> list:
+    return [log for log in logs if log.output_target == note_path or note_path in log.input_files]
 
 
 app = create_app()

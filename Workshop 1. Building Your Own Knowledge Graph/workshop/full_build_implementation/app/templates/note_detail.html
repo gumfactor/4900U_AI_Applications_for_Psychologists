@@ -7,6 +7,7 @@
             <strong>Status</strong>
             <p>{{ note.metadata.status }}</p>
             <p>Human reviewed: {{ "yes" if note.metadata.human_reviewed else "no" }}</p>
+            <p>AI-assisted: {{ "yes" if note.metadata.ai_assisted else "no" }}</p>
         </div>
         <a href="/notes/{{ note.slug }}/edit" class="ghost-link">Edit Note</a>
     </div>
@@ -38,6 +39,31 @@
         </ul>
         <h3>Evidence / Sources</h3>
         <ul>{% for item in note.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
+    </article>
+</section>
+<section class="grid two-up">
+    <article class="panel">
+        <h3>Provenance</h3>
+        <ul class="clean-list">
+            <li><span>AI-assisted</span><strong>{{ "yes" if note.metadata.ai_assisted else "no" }}</strong></li>
+            <li><span>Human reviewed</span><strong>{{ "yes" if note.metadata.human_reviewed else "no" }}</strong></li>
+            <li><span>Related AI logs</span><strong>{{ related_logs | length }}</strong></li>
+        </ul>
+        {% if related_logs %}
+        <h3>Recent AI Activity</h3>
+        <ul class="link-list">
+            {% for log in related_logs %}
+            <li><a href="/logs/{{ log.slug }}">{{ log.task }} - {{ log.timestamp }}</a></li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="muted-text">No AI logs are linked to this note yet.</p>
+        {% endif %}
+    </article>
+    <article class="panel">
+        <h3>Review Guidance</h3>
+        <p>Use the edit screen to correct metadata, tighten summaries, and mark the note as human reviewed once the content is trustworthy.</p>
+        <p>If AI assisted the note, review linked logs to see how the draft or metadata was generated.</p>
     </article>
 </section>
 <section class="grid two-up">

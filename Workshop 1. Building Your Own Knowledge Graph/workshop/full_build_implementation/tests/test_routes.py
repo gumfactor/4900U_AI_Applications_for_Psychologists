@@ -126,3 +126,11 @@ def test_explore_route() -> None:
     response = client.get("/explore?kind=person&value=Workshop%20Instructor")
     assert response.status_code == 200
     assert "Workshop Instructor" in response.text
+
+
+def test_note_detail_shows_provenance() -> None:
+    client = build_test_client()
+    response = client.get("/notes/concept-personal-knowledge-base")
+    assert response.status_code == 200
+    assert "Provenance" in response.text
+    assert "Related AI logs" in response.text

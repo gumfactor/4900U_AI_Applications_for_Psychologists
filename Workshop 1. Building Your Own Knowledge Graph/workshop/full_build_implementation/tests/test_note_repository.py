@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.services.ai_service import AiService
 from app.services.note_repository import NoteRepository
 
 
@@ -30,3 +31,28 @@ def test_seeded_notes_use_refactored_schema() -> None:
         assert "projects:" in text
         assert "\ntype:" not in text
         assert "\ntopic:" not in text
+
+
+def test_ai_service_parses_metadata_yaml_output() -> None:
+    parsed = AiService._parse_metadata_yaml(
+        """```yaml
+note_kind: method-note
+topics:
+  - Knowledge Bases
+people:
+  - Ada Lovelace
+sources:
+  - Example Source
+projects:
+  - Demo Project
+tags:
+  - structure
+  - workflow
+source_refs:
+  - data/sources/example.md
+```"""
+    )
+    assert parsed["note_kind"] == "method-note"
+    assert parsed["topics"] == ["Knowledge Bases"]
+    assert parsed["people"] == ["Ada Lovelace"]
+    assert parsed["source_refs"] == ["data/sources/example.md"]

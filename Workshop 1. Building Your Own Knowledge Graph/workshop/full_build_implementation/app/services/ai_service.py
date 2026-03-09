@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import re
+
+import yaml
+
 from app.models import AiTaskRequest, AiTaskResult, Note
 from app.services.gemini_client import GeminiClient
 from app.services.log_service import LogService
@@ -96,6 +100,49 @@ class AiService:
             log_path=log_path,
         )
 
+    def infer_note_metadata(
+        self,
+        title: str,
+        content: str,
+        source_refs: list[str] | None = None,
+        model: str | None = None,
+    ) -> dict[str, object]:
+        if not self.gemini_client:
+            return {
+                "note_kind": None,
+                "topics": [],
+                "people": [],
+                "sources": [],
+                "projects": [],
+                "tags": [],
+                "source_refs": source_refs or [],
+                "model": None,
+                "prompt_slug": self.TASK_PROMPTS["metadata_extraction"],
+                "raw_output": "",
+                "input_paths": source_refs or [],
+            }
+
+        prompt_slug = self.TASK_PROMPTS["metadata_extraction"]
+        prompt_template = self.prompt_repository.get_prompt(prompt_slug)
+        selected_model = model or self.default_model
+        prompt_text = "\n\n".join(
+            [
+                prompt_template.content.strip(),
+                "",
+                f"Title: {title.strip()}",
+                "",
+                "Note body:",
+                content.strip(),
+            ]
+        ).strip()
+        raw_output = self.gemini_client.generate(prompt_text, selected_model)
+        parsed = self._parse_metadata_yaml(raw_output)
+        parsed["model"] = selected_model
+        parsed["prompt_slug"] = prompt_slug
+        parsed["raw_output"] = raw_output
+        parsed["input_paths"] = source_refs or []
+        return parsed
+
     def _load_selected_notes(self, slugs: list[str]) -> list[Note]:
         if len(slugs) < 2 or len(slugs) > 5:
             raise ValueError("Select between 2 and 5 notes for this task.")
@@ -124,3 +171,49 @@ class AiService:
                 )
             )
         ).strip()
+
+    @staticmethod
+    def _parse_metadata_yaml(raw_output: str) -> dict[str, object]:
+        cleaned = raw_output.strip()
+        fenced_match = re.search(r"```(?:yaml)?\s*(.*?)```", cleaned, re.DOTALL)
+        if fenced_match:
+            cleaned = fenced_match.group(1).strip()
+        parsed = yaml.safe_load(cleaned) or {}
+        if not isinstance(parsed, dict):
+            raise ValueError("Metadata extraction did not return a YAML mapping.")
+        return {
+            "note_kind": AiService._normalize_scalar(parsed.get("note_kind")),
+            "topics": AiService._normalize_list(parsed.get("topics")),
+            "people": AiService._normalize_list(parsed.get("people")),
+            "sources": AiService._normalize_list(parsed.get("sources")),
+            "projects": AiService._normalize_list(parsed.get("projects")),
+            "tags": AiService._normalize_list(parsed.get("tags")),
+            "source_refs": AiService._normalize_list(parsed.get("source_refs")),
+        }
+
+    @staticmethod
+    def _normalize_list(value: object) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            values = [value]
+        elif isinstance(value, list):
+            values = [str(item).strip() for item in value]
+        else:
+            values = [str(value).strip()]
+        seen: set[str] = set()
+        normalized: list[str] = []
+        for item in values:
+            if not item:
+                continue
+            if item not in seen:
+                seen.add(item)
+                normalized.append(item)
+        return normalized
+
+    @staticmethod
+    def _normalize_scalar(value: object) -> str | None:
+        if value is None:
+            return None
+        cleaned = str(value).strip()
+        return cleaned or None

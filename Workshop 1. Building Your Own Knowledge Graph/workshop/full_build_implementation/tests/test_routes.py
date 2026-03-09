@@ -9,6 +9,21 @@ from app.main import create_app
 
 class FakeGeminiClient:
     def generate(self, prompt: str, model: str) -> str:
+        if "Return the result in YAML only with exactly these keys" in prompt:
+            return """note_kind: brainstorming
+topics:
+  - Testing
+people:
+  - Test User
+sources:
+  - PKB Design Principles
+projects:
+  - Instructor Demo System
+tags:
+  - runtime
+  - demo
+source_refs: []
+"""
         return "## Summary\n\nSynthetic answer.\n\n## Key Points\n\n- Point one"
 
 
@@ -60,3 +75,5 @@ def test_ai_run_and_save_draft_routes() -> None:
     assert draft_response.json()["metadata"]["status"] == "ai-drafted"
     assert draft_response.json()["metadata"]["note_kind"] == "synthesis"
     assert draft_response.json()["metadata"]["topics"] == ["Testing"]
+    assert draft_response.json()["metadata"]["people"] == ["Test User"]
+    assert "runtime" in draft_response.json()["metadata"]["tags"]

@@ -192,23 +192,46 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     @app.post("/api/notes/save-draft")
     def save_draft(request_body: SaveDraftRequest) -> dict:
+        inferred_metadata = ai_service.infer_note_metadata(
+            title=request_body.title,
+            content=request_body.content,
+            source_refs=request_body.source_refs,
+        )
+        note_kind = request_body.note_kind or inferred_metadata["note_kind"]
+        topics = _merge_metadata_lists(request_body.topics, inferred_metadata["topics"])
+        people = _merge_metadata_lists(request_body.people, inferred_metadata["people"])
+        sources = _merge_metadata_lists(request_body.sources, inferred_metadata["sources"])
+        projects = _merge_metadata_lists(request_body.projects, inferred_metadata["projects"])
+        tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
+        source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
+        used_ai_metadata = bool(inferred_metadata.get("model"))
         note = note_repository.save_draft(
             title=request_body.title,
-            note_kind=request_body.note_kind,
-            topics=request_body.topics,
-            people=request_body.people,
-            sources=request_body.sources,
-            projects=request_body.projects,
-            source_refs=request_body.source_refs,
-            tags=request_body.tags,
+            note_kind=note_kind,
+            topics=topics,
+            people=people,
+            sources=sources,
+            projects=projects,
+            source_refs=source_refs,
+            tags=tags,
             content=request_body.content,
-            ai_assisted=request_body.ai_assisted,
+            ai_assisted=request_body.ai_assisted or used_ai_metadata,
         )
+        if used_ai_metadata:
+            log_service.write_log(
+                task="metadata_extraction",
+                prompt_slug=str(inferred_metadata["prompt_slug"]),
+                model=str(inferred_metadata["model"]),
+                input_files=list(inferred_metadata["input_paths"]),
+                output_target=note.path,
+                review_outcome="pending-review",
+                notes="Metadata inferred during note creation.",
+            )
         log_service.write_log(
             task="save_draft",
             prompt_slug="manual-or-ui",
             model="n/a",
-            input_files=request_body.source_refs,
+            input_files=source_refs,
             output_target=note.path,
             review_outcome="pending-review",
             notes="Draft note saved from UI.",
@@ -302,6 +325,18 @@ def _render_notes_page(
             },
         },
     )
+
+
+def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for candidate in [*primary, *(secondary if isinstance(secondary, list) else [])]:
+        cleaned = str(candidate).strip()
+        if not cleaned or cleaned in seen:
+            continue
+        seen.add(cleaned)
+        merged.append(cleaned)
+    return merged
 
 
 app = create_app()

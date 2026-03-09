@@ -29,11 +29,11 @@
         </ul>
         <h3>Entity Attributes</h3>
         <ul class="clean-list">
-            <li><span>Topics</span><strong>{{ note.metadata.topics | join(", ") or "n/a" }}</strong></li>
-            <li><span>Tags</span><strong>{{ note.metadata.tags | join(", ") or "n/a" }}</strong></li>
-            <li><span>People</span><strong>{{ note.metadata.people | join(", ") or "n/a" }}</strong></li>
-            <li><span>Sources</span><strong>{{ note.metadata.sources | join(", ") or "n/a" }}</strong></li>
-            <li><span>Projects</span><strong>{{ note.metadata.projects | join(", ") or "n/a" }}</strong></li>
+            <li><span>Topics</span><strong>{% for topic in note.metadata.topics %}<a href="{{ build_explore_href('topic', topic) }}">{{ topic }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.topics %}n/a{% endif %}</strong></li>
+            <li><span>Tags</span><strong>{% for tag in note.metadata.tags %}<a href="{{ build_explore_href('tag', tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.tags %}n/a{% endif %}</strong></li>
+            <li><span>People</span><strong>{% for person in note.metadata.people %}<a href="{{ build_explore_href('person', person) }}">{{ person }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.people %}n/a{% endif %}</strong></li>
+            <li><span>Sources</span><strong>{% for source in note.metadata.sources %}<a href="{{ build_explore_href('source', source) }}">{{ source }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.sources %}n/a{% endif %}</strong></li>
+            <li><span>Projects</span><strong>{% for project in note.metadata.projects %}<a href="{{ build_explore_href('project', project) }}">{{ project }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.projects %}n/a{% endif %}</strong></li>
             <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
         </ul>
         <h3>Evidence / Sources</h3>

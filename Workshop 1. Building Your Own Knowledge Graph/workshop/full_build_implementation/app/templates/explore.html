@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Explore {{ kind }}</p>
+        <h2>{{ value }}</h2>
+    </div>
+    <div class="status-card compact-card">
+        <strong>Matching Notes</strong>
+        <p>{{ notes | length }}</p>
+    </div>
+</section>
+<section class="grid two-up">
+    {% for related_kind, items in related_counts.items() %}
+    <article class="panel">
+        <h3>Related {{ related_kind|capitalize }}s</h3>
+        <div class="attribute-chip-group">
+            {% for item_value, item_count in items %}
+            <a href="{{ build_explore_href(related_kind, item_value) }}" class="attribute-chip">{{ item_value }} ({{ item_count }})</a>
+            {% endfor %}
+            {% if not items %}
+            <span class="muted-text">No related {{ related_kind }} values yet.</span>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+</section>
+<section class="notes-list">
+    {% for note in notes %}
+    <article class="panel note-card note-card-row">
+        <div class="panel-head">
+            <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
+            {% if note.metadata.note_kind %}<span class="pill">{{ note.metadata.note_kind }}</span>{% endif %}
+        </div>
+        <p class="attribute-chip-group">
+            {% for topic in note.metadata.topics %}<a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip">topic: {{ topic }}</a>{% endfor %}
+            {% for tag in note.metadata.tags %}<a href="{{ build_explore_href('tag', tag) }}" class="attribute-chip">tag: {{ tag }}</a>{% endfor %}
+            {% for person in note.metadata.people %}<a href="{{ build_explore_href('person', person) }}" class="attribute-chip">person: {{ person }}</a>{% endfor %}
+            {% for source in note.metadata.sources %}<a href="{{ build_explore_href('source', source) }}" class="attribute-chip">source: {{ source }}</a>{% endfor %}
+            {% for project in note.metadata.projects %}<a href="{{ build_explore_href('project', project) }}" class="attribute-chip">project: {{ project }}</a>{% endfor %}
+        </p>
+        <p>{{ note.summary }}</p>
+    </article>
+    {% endfor %}
+</section>
+{% endblock %}

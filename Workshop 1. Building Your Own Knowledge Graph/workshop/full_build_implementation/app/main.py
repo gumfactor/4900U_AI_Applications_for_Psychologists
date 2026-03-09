@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -118,7 +119,14 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return templates.TemplateResponse(
-            request, "note_detail.html", {"note": note, "ai_enabled": settings.ai_enabled, "title": note.metadata.title}
+            request,
+            "note_detail.html",
+            {
+                "note": note,
+                "ai_enabled": settings.ai_enabled,
+                "title": note.metadata.title,
+                "build_explore_href": _build_explore_href,
+            },
         )
 
     @app.get("/notes/{slug}/edit", response_class=HTMLResponse)
@@ -141,6 +149,26 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     def sources_page(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
             request, "sources.html", {"sources": source_repository.list_sources(), "ai_enabled": settings.ai_enabled, "title": "Sources"}
+        )
+
+    @app.get("/explore", response_class=HTMLResponse)
+    def explore_page(request: Request, kind: str, value: str) -> HTMLResponse:
+        if kind not in {"topic", "tag", "person", "source", "project"}:
+            raise HTTPException(status_code=404, detail=f"Unsupported exploration kind: {kind}")
+        notes = _notes_for_entity(note_repository.list_notes(), kind, value)
+        related_counts = _build_related_counts(notes, kind, value)
+        return templates.TemplateResponse(
+            request,
+            "explore.html",
+            {
+                "kind": kind,
+                "value": value,
+                "notes": notes,
+                "related_counts": related_counts,
+                "ai_enabled": settings.ai_enabled,
+                "title": f"Explore {value}",
+                "build_explore_href": _build_explore_href,
+            },
         )
 
     @app.get("/sources/{slug}", response_class=HTMLResponse)
@@ -409,6 +437,7 @@ def _render_notes_page(
             "ai_enabled": settings.ai_enabled,
             "title": "Notes",
             "view_mode": view_mode,
+            "build_explore_href": _build_explore_href,
             "active_filters": {
                 "note_kind": note_kind or "",
                 "topic": topic or "",
@@ -432,6 +461,43 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
         seen.add(cleaned)
         merged.append(cleaned)
     return merged
+
+
+def _notes_for_entity(notes: list, kind: str, value: str) -> list:
+    attribute_map = {
+        "topic": "topics",
+        "tag": "tags",
+        "person": "people",
+        "source": "sources",
+        "project": "projects",
+    }
+    attribute_name = attribute_map[kind]
+    return [note for note in notes if value in getattr(note.metadata, attribute_name)]
+
+
+def _build_related_counts(notes: list, active_kind: str, active_value: str) -> dict[str, list[tuple[str, int]]]:
+    related: dict[str, list[tuple[str, int]]] = {}
+    attribute_map = {
+        "topic": "topics",
+        "tag": "tags",
+        "person": "people",
+        "source": "sources",
+        "project": "projects",
+    }
+    for kind, attribute_name in attribute_map.items():
+        counter: Counter = Counter()
+        for note in notes:
+            values = getattr(note.metadata, attribute_name)
+            for value in values:
+                if kind == active_kind and value == active_value:
+                    continue
+                counter[value] += 1
+        related[kind] = counter.most_common(8)
+    return related
+
+
+def _build_explore_href(kind: str, value: str) -> str:
+    return f"/explore?kind={quote(kind)}&value={quote(value)}"
 
 
 app = create_app()

@@ -119,3 +119,10 @@ def test_edit_note_routes() -> None:
     assert update_response.status_code == 200
     assert update_response.json()["metadata"]["title"] == "Edited PKB Note"
     assert update_response.json()["metadata"]["status"] == "reviewed"
+
+
+def test_explore_route() -> None:
+    client = build_test_client()
+    response = client.get("/explore?kind=person&value=Workshop%20Instructor")
+    assert response.status_code == 200
+    assert "Workshop Instructor" in response.text

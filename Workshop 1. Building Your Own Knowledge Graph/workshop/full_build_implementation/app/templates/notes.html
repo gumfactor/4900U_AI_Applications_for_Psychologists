@@ -84,11 +84,11 @@
             {% if note.metadata.note_kind %}<span class="pill">{{ note.metadata.note_kind }}</span>{% endif %}
         </div>
         <p class="attribute-chip-group">
-            {% for topic in note.metadata.topics %}<span class="attribute-chip">topic: {{ topic }}</span>{% endfor %}
-            {% for tag in note.metadata.tags %}<span class="attribute-chip">tag: {{ tag }}</span>{% endfor %}
-            {% for person in note.metadata.people %}<span class="attribute-chip">person: {{ person }}</span>{% endfor %}
-            {% for source in note.metadata.sources %}<span class="attribute-chip">source: {{ source }}</span>{% endfor %}
-            {% for project in note.metadata.projects %}<span class="attribute-chip">project: {{ project }}</span>{% endfor %}
+            {% for topic in note.metadata.topics %}<a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip">topic: {{ topic }}</a>{% endfor %}
+            {% for tag in note.metadata.tags %}<a href="{{ build_explore_href('tag', tag) }}" class="attribute-chip">tag: {{ tag }}</a>{% endfor %}
+            {% for person in note.metadata.people %}<a href="{{ build_explore_href('person', person) }}" class="attribute-chip">person: {{ person }}</a>{% endfor %}
+            {% for source in note.metadata.sources %}<a href="{{ build_explore_href('source', source) }}" class="attribute-chip">source: {{ source }}</a>{% endfor %}
+            {% for project in note.metadata.projects %}<a href="{{ build_explore_href('project', project) }}" class="attribute-chip">project: {{ project }}</a>{% endfor %}
         </p>
         <p>{{ note.summary }}</p>
         <div class="meta-row">

@@ -178,9 +178,14 @@ class AiService:
         fenced_match = re.search(r"```(?:yaml)?\s*(.*?)```", cleaned, re.DOTALL)
         if fenced_match:
             cleaned = fenced_match.group(1).strip()
-        parsed = yaml.safe_load(cleaned) or {}
+        try:
+            parsed = yaml.safe_load(cleaned) or {}
+        except yaml.YAMLError:
+            parsed = AiService._fallback_metadata_mapping(cleaned)
         if not isinstance(parsed, dict):
-            raise ValueError("Metadata extraction did not return a YAML mapping.")
+            parsed = AiService._fallback_metadata_mapping(cleaned)
+        if not isinstance(parsed, dict):
+            raise ValueError("Metadata extraction did not return a usable metadata mapping.")
         return {
             "note_kind": AiService._normalize_scalar(parsed.get("note_kind")),
             "topics": AiService._normalize_list(parsed.get("topics")),
@@ -217,3 +222,32 @@ class AiService:
             return None
         cleaned = str(value).strip()
         return cleaned or None
+
+    @staticmethod
+    def _fallback_metadata_mapping(cleaned: str) -> dict[str, object]:
+        allowed_keys = {"note_kind", "topics", "people", "sources", "projects", "tags", "source_refs"}
+        parsed: dict[str, object] = {}
+        current_list_key: str | None = None
+        for line in cleaned.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if ":" in stripped and not stripped.startswith("- "):
+                key, raw_value = stripped.split(":", 1)
+                key = key.strip()
+                if key not in allowed_keys:
+                    current_list_key = None
+                    continue
+                value = raw_value.strip()
+                if value in {"", "null", "None"}:
+                    parsed[key] = None if key == "note_kind" else []
+                    current_list_key = None if key == "note_kind" else key
+                else:
+                    parsed[key] = value
+                    current_list_key = None
+                continue
+            if stripped.startswith("- ") and current_list_key:
+                parsed.setdefault(current_list_key, [])
+                if isinstance(parsed[current_list_key], list):
+                    parsed[current_list_key].append(stripped[2:].strip())
+        return parsed

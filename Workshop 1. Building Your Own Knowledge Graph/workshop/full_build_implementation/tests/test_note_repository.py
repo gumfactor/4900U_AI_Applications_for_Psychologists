@@ -59,6 +59,28 @@ source_refs:
     assert parsed["source_refs"] == ["data/sources/example.md"]
 
 
+def test_ai_service_parses_relaxed_metadata_output() -> None:
+    parsed = AiService._parse_metadata_yaml(
+        """note_kind: brainstorming
+topics:
+- Knowledge Bases
+people:
+- Ada Lovelace
+sources:
+- Example Source
+projects:
+- Demo Project
+tags:
+- structure
+source_refs:
+- data/sources/example.md
+"""
+    )
+    assert parsed["note_kind"] == "brainstorming"
+    assert parsed["topics"] == ["Knowledge Bases"]
+    assert parsed["projects"] == ["Demo Project"]
+
+
 def test_note_repository_updates_existing_note() -> None:
     source_base_dir = Path(__file__).resolve().parent.parent
     copied_base_dir = source_base_dir / "_test_runtime" / "repo_copy"

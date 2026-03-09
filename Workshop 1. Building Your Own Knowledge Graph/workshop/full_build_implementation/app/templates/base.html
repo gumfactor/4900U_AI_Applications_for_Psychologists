@@ -125,7 +125,7 @@
                 source_refs: splitCsv(formData.get("source_refs"))
             })
         });
-        return await response.json();
+        return { ok: response.ok, data: await response.json() };
     }
 
     function applyInferredMetadata(formData, inferred) {
@@ -139,6 +139,28 @@
             const inferredValues = Array.isArray(inferred[fieldName]) ? inferred[fieldName] : [];
             field.value = uniqueMerge(currentValues, inferredValues).join(", ");
         }
+    }
+
+    async function saveNote(formData, metadataReviewed) {
+        const payload = {
+            title: formData.get("title"),
+            note_kind: formData.get("note_kind"),
+            topics: splitCsv(formData.get("topics")),
+            people: splitCsv(formData.get("people")),
+            sources: splitCsv(formData.get("sources")),
+            projects: splitCsv(formData.get("projects")),
+            tags: splitCsv(formData.get("tags")),
+            source_refs: splitCsv(formData.get("source_refs")),
+            content: formData.get("content") || "",
+            ai_assisted: formData.get("ai_assisted") === "on",
+            metadata_reviewed: metadataReviewed
+        };
+        const response = await fetch("/api/notes/save-draft", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+        return { ok: response.ok, data: await response.json() };
     }
 
     function setNotePanelOpen(isOpen) {
@@ -156,40 +178,25 @@
         const formData = new FormData(newNoteForm);
         const metadataSignature = buildMetadataSignature(formData);
         if (aiEnabled && metadataSignature !== lastMetadataSignature) {
-            const inferred = await inferMetadata(formData);
-            if (!inferred.ai_enabled) {
+            const inferredResponse = await inferMetadata(formData);
+            if (!inferredResponse.ok) {
+                newNoteFeedback.textContent = `${inferredResponse.data.detail || "Could not infer metadata."} Saving with the fields currently entered.`;
+            } else if (!inferredResponse.data.ai_enabled) {
                 newNoteFeedback.textContent = "AI metadata inference is unavailable. Saving with the fields currently entered.";
             } else {
-                applyInferredMetadata(formData, inferred);
+                applyInferredMetadata(formData, inferredResponse.data);
                 lastMetadataSignature = metadataSignature;
                 newNoteFeedback.textContent = "AI suggested note attributes. Review or edit them, then click Save Note again.";
                 return;
             }
         }
-        const payload = {
-            title: formData.get("title"),
-            note_kind: formData.get("note_kind"),
-            topics: splitCsv(formData.get("topics")),
-            people: splitCsv(formData.get("people")),
-            sources: splitCsv(formData.get("sources")),
-            projects: splitCsv(formData.get("projects")),
-            tags: splitCsv(formData.get("tags")),
-            source_refs: splitCsv(formData.get("source_refs")),
-            content: formData.get("content") || "",
-            ai_assisted: formData.get("ai_assisted") === "on",
-            metadata_reviewed: aiEnabled
-        };
-        const response = await fetch("/api/notes/save-draft", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        if (!response.ok) {
+        const saveResponse = await saveNote(formData, aiEnabled && metadataSignature === lastMetadataSignature);
+        if (!saveResponse.ok) {
+            const data = saveResponse.data;
             newNoteFeedback.textContent = data.detail || "Could not save note.";
             return;
         }
-        window.location.href = `/notes/${data.slug}`;
+        window.location.href = `/notes/${saveResponse.data.slug}`;
     });
     </script>
 </body>

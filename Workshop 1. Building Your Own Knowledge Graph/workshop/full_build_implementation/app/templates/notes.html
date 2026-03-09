@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div><p class="eyebrow">Note Browser</p><h2>Notes</h2></div>
+</section>
+<section class="grid two-up">
+    {% for note in notes %}
+    <article class="panel">
+        <div class="panel-head">
+            <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
+            <span class="pill">{{ note.metadata.type }}</span>
+        </div>
+        <p>{{ note.summary }}</p>
+        <div class="meta-row">
+            <span>Status: {{ note.metadata.status }}</span>
+            <span>AI: {{ "yes" if note.metadata.ai_assisted else "no" }}</span>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% endblock %}

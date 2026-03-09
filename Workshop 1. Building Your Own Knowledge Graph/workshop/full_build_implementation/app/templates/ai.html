@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Bounded AI</p>
+        <h2>AI Tasks</h2>
+        <p>Default model: {{ default_model }}. Optional higher-quality model: {{ high_quality_model }}.</p>
+    </div>
+    <div class="status-card">
+        <strong>AI Status</strong>
+        <p>{{ "Enabled" if ai_enabled else "Disabled" }}</p>
+    </div>
+</section>
+{% if not ai_enabled %}
+<article class="panel warning">
+    <h3>Browse-only mode</h3>
+    <p>Set <code>GEMINI_API_KEY</code> in your environment to enable live AI tasks.</p>
+</article>
+{% endif %}
+<section class="grid two-up">
+    <article class="panel">
+        <h3>Run AI Task</h3>
+        <form id="ai-form">
+            <label>Task
+                <select name="task">
+                    <option value="source_summary">Source to Note Summary</option>
+                    <option value="metadata_extraction">Metadata Extraction</option>
+                    <option value="related_note_suggestion">Related Note Suggestion</option>
+                    <option value="question_answering">Question Answering</option>
+                </select>
+            </label>
+            <label>Model
+                <select name="model">
+                    <option value="{{ default_model }}">{{ default_model }}</option>
+                    <option value="{{ high_quality_model }}">{{ high_quality_model }}</option>
+                </select>
+            </label>
+            <label>Source
+                <select name="source_slug">
+                    <option value="">None</option>
+                    {% for source in sources %}<option value="{{ source.slug }}">{{ source.title }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Notes (Ctrl/Cmd click for multiple)
+                <select name="note_slugs" multiple size="8">
+                    {% for note in notes %}<option value="{{ note.slug }}">{{ note.metadata.title }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Question
+                <textarea name="question" rows="4" placeholder="Only required for question answering"></textarea>
+            </label>
+            <button type="submit" {% if not ai_enabled %}disabled{% endif %}>Run Task</button>
+        </form>
+    </article>
+    <article class="panel">
+        <h3>Task Result</h3>
+        <pre id="ai-output">Run a task to preview the output.</pre>
+        <div id="save-draft-shell" class="save-shell hidden">
+            <h4>Save Draft Note</h4>
+            <form id="save-draft-form">
+                <label>Title <input name="title" type="text" required></label>
+                <label>Type
+                    <select name="note_type">
+                        <option value="concept">concept</option>
+                        <option value="source">source</option>
+                        <option value="person">person</option>
+                        <option value="project">project</option>
+                    </select>
+                </label>
+                <label>Tags (comma separated) <input name="tags" type="text"></label>
+                <label>Source refs (comma separated) <input name="source_refs" type="text"></label>
+                <button type="submit">Save Draft</button>
+            </form>
+        </div>
+    </article>
+</section>
+<script>
+const aiForm = document.getElementById("ai-form");
+const saveForm = document.getElementById("save-draft-form");
+const output = document.getElementById("ai-output");
+const saveShell = document.getElementById("save-draft-shell");
+let latestOutput = "";
+aiForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(aiForm);
+  const noteSlugs = Array.from(aiForm.querySelector('[name="note_slugs"]').selectedOptions).map((option) => option.value);
+  const payload = {
+    task: formData.get("task"),
+    model: formData.get("model"),
+    source_slug: formData.get("source_slug") || null,
+    note_slugs: noteSlugs,
+    question: formData.get("question") || null
+  };
+  const response = await fetch("/api/ai/run", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    output.textContent = data.detail || "Task failed.";
+    saveShell.classList.add("hidden");
+    return;
+  }
+  latestOutput = data.output_text;
+  output.textContent = data.output_text;
+  saveShell.classList.remove("hidden");
+});
+saveForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(saveForm);
+  const payload = {
+    title: formData.get("title"),
+    note_type: formData.get("note_type"),
+    tags: (formData.get("tags") || "").split(",").map((x) => x.trim()).filter(Boolean),
+    source_refs: (formData.get("source_refs") || "").split(",").map((x) => x.trim()).filter(Boolean),
+    content: latestOutput,
+    ai_assisted: true
+  };
+  const response = await fetch("/api/notes/save-draft", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    output.textContent = data.detail || "Saving failed.";
+    return;
+  }
+  window.location.href = `/notes/${data.slug}`;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div><p class="eyebrow">{{ note.metadata.type }}</p><h2>{{ note.metadata.title }}</h2></div>
+    <div class="status-card">
+        <strong>Status</strong>
+        <p>{{ note.metadata.status }}</p>
+        <p>Human reviewed: {{ "yes" if note.metadata.human_reviewed else "no" }}</p>
+    </div>
+</section>
+<section class="grid two-up">
+    <article class="panel">
+        <h3>Summary</h3>
+        <p>{{ note.summary }}</p>
+        <h3>Key Points</h3>
+        <ul>{% for item in note.key_points %}<li>{{ item }}</li>{% endfor %}</ul>
+    </article>
+    <article class="panel">
+        <h3>Metadata</h3>
+        <ul class="clean-list">
+            <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
+            <li><span>Created</span><strong>{{ note.metadata.created }}</strong></li>
+            <li><span>Updated</span><strong>{{ note.metadata.updated }}</strong></li>
+            <li><span>Tags</span><strong>{{ note.metadata.tags | join(", ") }}</strong></li>
+        </ul>
+        <h3>Evidence / Sources</h3>
+        <ul>{% for item in note.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
+    </article>
+</section>
+<section class="grid two-up">
+    <article class="panel">
+        <h3>Linked Notes</h3>
+        <ul>{% for link in note.links %}<li><code>{{ link.relationship }}</code> {{ link.title }} ({{ link.target }})</li>{% endfor %}</ul>
+    </article>
+    <article class="panel">
+        <h3>Open Questions</h3>
+        <ul>{% for item in note.open_questions %}<li>{{ item }}</li>{% endfor %}</ul>
+    </article>
+</section>
+{% endblock %}

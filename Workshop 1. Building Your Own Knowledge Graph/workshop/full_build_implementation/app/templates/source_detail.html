@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div><p class="eyebrow">Source</p><h2>{{ source.title }}</h2></div>
+</section>
+<article class="panel prose-block"><pre>{{ source.content }}</pre></article>
+{% endblock %}

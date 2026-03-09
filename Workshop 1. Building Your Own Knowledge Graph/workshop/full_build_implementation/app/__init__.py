@@ -1,0 +1,1 @@
+"""Instructor demo application package."""

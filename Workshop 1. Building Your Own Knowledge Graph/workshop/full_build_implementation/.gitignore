@@ -1,0 +1,11 @@
+.env
+.env.local
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.pyc
+_test_runtime/
+.pytest-tmp/
+pytest-cache-files-*/
+tmp*/

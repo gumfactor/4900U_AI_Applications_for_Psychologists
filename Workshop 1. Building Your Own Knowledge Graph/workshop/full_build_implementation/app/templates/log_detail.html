@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div><p class="eyebrow">AI Log</p><h2>{{ log_entry.task }}</h2></div>
+</section>
+<article class="panel prose-block"><pre>{{ log_entry.raw_content }}</pre></article>
+{% endblock %}

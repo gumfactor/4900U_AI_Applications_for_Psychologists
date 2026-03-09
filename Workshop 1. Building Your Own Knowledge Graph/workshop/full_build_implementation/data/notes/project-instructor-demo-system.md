@@ -1,8 +1,22 @@
 ---
 id: project-instructor-demo-system
 title: Instructor Demo System
-type: project
 status: final
+topics:
+  - workshop infrastructure
+  - personal knowledge bases
+concepts:
+  - Personal Knowledge Base
+  - AI Provenance Logging
+  - Bounded Querying
+people:
+  - Workshop Instructor
+sources:
+  - PKB Design Principles
+  - AI Review Discipline
+  - Bounded Querying
+projects:
+  - Instructor Demo System
 tags:
   - demo
   - fastapi

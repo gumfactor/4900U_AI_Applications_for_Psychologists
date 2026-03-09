@@ -41,8 +41,12 @@ def test_ai_run_and_save_draft_routes() -> None:
         "/api/notes/save-draft",
         json={
             "title": "Runtime Draft",
-            "topic": "Testing",
-            "note_type": "concept",
+            "note_kind": "synthesis",
+            "topics": ["Testing"],
+            "concepts": ["Runtime Draft"],
+            "people": ["Test User"],
+            "sources": ["PKB Design Principles"],
+            "projects": ["Instructor Demo System"],
             "source_refs": ["data/sources/source-pkb-design-principles.md"],
             "tags": ["runtime", "demo"],
             "content": ai_response.json()["output_text"],
@@ -51,4 +55,5 @@ def test_ai_run_and_save_draft_routes() -> None:
     )
     assert draft_response.status_code == 200
     assert draft_response.json()["metadata"]["status"] == "ai-drafted"
-    assert draft_response.json()["metadata"]["topic"] == "Testing"
+    assert draft_response.json()["metadata"]["note_kind"] == "synthesis"
+    assert draft_response.json()["metadata"]["topics"] == ["Testing"]

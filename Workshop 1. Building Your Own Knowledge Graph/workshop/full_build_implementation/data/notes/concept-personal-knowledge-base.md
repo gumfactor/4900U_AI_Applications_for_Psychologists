@@ -1,8 +1,17 @@
 ---
 id: concept-personal-knowledge-base
 title: Personal Knowledge Base
-type: concept
 status: final
+topics:
+  - knowledge management
+  - personal knowledge bases
+concepts:
+  - Personal Knowledge Base
+people: []
+sources:
+  - PKB Design Principles
+projects:
+  - Instructor Demo System
 tags:
   - pkb
   - notes

@@ -7,16 +7,86 @@
         <p>Use the <code>New Note</code> button to open the slideout editor.</p>
     </div>
 </section>
+<section class="panel filter-panel">
+    <form method="get" action="/notes" class="filter-grid">
+        <label>Note Kind
+            <input name="note_kind" type="text" value="{{ active_filters.note_kind }}" list="note-kinds">
+            <datalist id="note-kinds">
+                {% for note in all_notes %}
+                {% if note.metadata.note_kind %}<option value="{{ note.metadata.note_kind }}"></option>{% endif %}
+                {% endfor %}
+            </datalist>
+        </label>
+        <label>Topic
+            <input name="topic" type="text" value="{{ active_filters.topic }}" list="topics">
+            <datalist id="topics">
+                {% for note in all_notes %}
+                {% for value in note.metadata.topics %}
+                <option value="{{ value }}"></option>
+                {% endfor %}
+                {% endfor %}
+            </datalist>
+        </label>
+        <label>Concept
+            <input name="concept" type="text" value="{{ active_filters.concept }}" list="concepts">
+            <datalist id="concepts">
+                {% for note in all_notes %}
+                {% for value in note.metadata.concepts %}
+                <option value="{{ value }}"></option>
+                {% endfor %}
+                {% endfor %}
+            </datalist>
+        </label>
+        <label>Person
+            <input name="person" type="text" value="{{ active_filters.person }}" list="people">
+            <datalist id="people">
+                {% for note in all_notes %}
+                {% for value in note.metadata.people %}
+                <option value="{{ value }}"></option>
+                {% endfor %}
+                {% endfor %}
+            </datalist>
+        </label>
+        <label>Source
+            <input name="source" type="text" value="{{ active_filters.source }}" list="sources">
+            <datalist id="sources">
+                {% for note in all_notes %}
+                {% for value in note.metadata.sources %}
+                <option value="{{ value }}"></option>
+                {% endfor %}
+                {% endfor %}
+            </datalist>
+        </label>
+        <label>Project
+            <input name="project" type="text" value="{{ active_filters.project }}" list="projects">
+            <datalist id="projects">
+                {% for note in all_notes %}
+                {% for value in note.metadata.projects %}
+                <option value="{{ value }}"></option>
+                {% endfor %}
+                {% endfor %}
+            </datalist>
+        </label>
+        <div class="filter-actions">
+            <button type="submit">Filter Notes</button>
+            <a href="/notes" class="ghost-link">Clear</a>
+        </div>
+    </form>
+</section>
 <section class="grid two-up">
     {% for note in notes %}
     <article class="panel">
         <div class="panel-head">
             <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
-            <span class="pill">{{ note.metadata.type }}</span>
+            {% if note.metadata.note_kind %}<span class="pill">{{ note.metadata.note_kind }}</span>{% endif %}
         </div>
-        {% if note.metadata.topic %}
-        <p class="topic-label">Topic: {{ note.metadata.topic }}</p>
-        {% endif %}
+        <p class="attribute-chip-group">
+            {% for topic in note.metadata.topics %}<span class="attribute-chip">topic: {{ topic }}</span>{% endfor %}
+            {% for concept in note.metadata.concepts %}<span class="attribute-chip">concept: {{ concept }}</span>{% endfor %}
+            {% for person in note.metadata.people %}<span class="attribute-chip">person: {{ person }}</span>{% endfor %}
+            {% for source in note.metadata.sources %}<span class="attribute-chip">source: {{ source }}</span>{% endfor %}
+            {% for project in note.metadata.projects %}<span class="attribute-chip">project: {{ project }}</span>{% endfor %}
+        </p>
         <p>{{ note.summary }}</p>
         <div class="meta-row">
             <span>Status: {{ note.metadata.status }}</span>

@@ -1,8 +1,18 @@
 ---
 id: concept-structured-markdown-notes
 title: Structured Markdown Notes
-type: concept
 status: final
+topics:
+  - markdown
+  - knowledge management
+concepts:
+  - Structured Markdown Notes
+people:
+  - Workshop Instructor
+sources:
+  - PKB Design Principles
+projects:
+  - Instructor Demo System
 tags:
   - markdown
   - frontmatter

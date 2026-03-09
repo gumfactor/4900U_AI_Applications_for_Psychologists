@@ -18,11 +18,14 @@
 </section>
 <section class="grid two-up">
     <article class="panel">
-        <h3>Note Types</h3>
+        <h3>Special Note Kinds</h3>
         <ul class="clean-list">
-            {% for key, value in summary.note_type_counts.items() %}
+            {% for key, value in summary.note_kind_counts.items() %}
             <li><span>{{ key }}</span><strong>{{ value }}</strong></li>
             {% endfor %}
+            {% if not summary.note_kind_counts %}
+            <li><span>none yet</span><strong>0</strong></li>
+            {% endif %}
         </ul>
     </article>
     <article class="panel">

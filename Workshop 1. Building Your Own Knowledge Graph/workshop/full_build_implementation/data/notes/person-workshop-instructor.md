@@ -1,8 +1,19 @@
 ---
 id: person-workshop-instructor
 title: Workshop Instructor
-type: person
 status: final
+topics:
+  - teaching
+  - ai-assisted learning
+concepts:
+  - AI Review Discipline
+  - AI Provenance Logging
+people:
+  - Workshop Instructor
+sources:
+  - AI Review Discipline
+projects:
+  - Instructor Demo System
 tags:
   - instructor
   - teaching

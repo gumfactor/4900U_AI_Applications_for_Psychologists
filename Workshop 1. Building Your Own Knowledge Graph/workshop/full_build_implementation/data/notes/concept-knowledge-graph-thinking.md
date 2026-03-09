@@ -1,8 +1,18 @@
 ---
 id: concept-knowledge-graph-thinking
 title: Knowledge Graph Thinking
-type: concept
 status: reviewed
+topics:
+  - knowledge graphs
+  - personal knowledge bases
+concepts:
+  - Knowledge Graph Thinking
+  - Personal Knowledge Base
+people: []
+sources:
+  - PKB Design Principles
+projects:
+  - Instructor Demo System
 tags:
   - graph
   - links

@@ -1,8 +1,19 @@
 ---
 id: concept-ai-provenance-logging
 title: AI Provenance Logging
-type: concept
 status: reviewed
+topics:
+  - ai-assisted learning
+  - reproducibility
+concepts:
+  - AI Provenance Logging
+  - AI Review Discipline
+people:
+  - Workshop Instructor
+sources:
+  - AI Review Discipline
+projects:
+  - Instructor Demo System
 tags:
   - ai
   - logs

@@ -1,8 +1,18 @@
 ---
 id: concept-ai-review-discipline
 title: AI Review Discipline
-type: concept
 status: final
+topics:
+  - ai-assisted learning
+  - review workflows
+concepts:
+  - AI Review Discipline
+people:
+  - Workshop Instructor
+sources:
+  - AI Review Discipline
+projects:
+  - Instructor Demo System
 tags:
   - ai
   - review

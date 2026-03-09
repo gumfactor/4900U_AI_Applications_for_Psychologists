@@ -59,15 +59,20 @@
             <h4>Save Draft Note</h4>
             <form id="save-draft-form">
                 <label>Title <input name="title" type="text" required></label>
-                <label>Topic <input name="topic" type="text"></label>
-                <label>Type
-                    <select name="note_type">
-                        <option value="concept">concept</option>
-                        <option value="source">source</option>
-                        <option value="person">person</option>
-                        <option value="project">project</option>
+                <label>Note Kind
+                    <select name="note_kind">
+                        <option value="">No special kind</option>
+                        <option value="synthesis">synthesis</option>
+                        <option value="reflection">reflection</option>
+                        <option value="method-note">method-note</option>
+                        <option value="brainstorming">brainstorming</option>
                     </select>
                 </label>
+                <label>Topics <input name="topics" type="text" placeholder="Comma separated topics"></label>
+                <label>Concepts <input name="concepts" type="text" placeholder="Comma separated concepts"></label>
+                <label>People <input name="people" type="text" placeholder="Comma separated people"></label>
+                <label>Sources <input name="sources" type="text" placeholder="Comma separated source labels"></label>
+                <label>Projects <input name="projects" type="text" placeholder="Comma separated projects"></label>
                 <label>Tags (comma separated) <input name="tags" type="text"></label>
                 <label>Source refs (comma separated) <input name="source_refs" type="text"></label>
                 <button type="submit">Save Draft</button>
@@ -112,13 +117,17 @@ saveForm?.addEventListener("submit", async (event) => {
   const formData = new FormData(saveForm);
     const payload = {
         title: formData.get("title"),
-        topic: formData.get("topic") || null,
-        note_type: formData.get("note_type"),
+        note_kind: formData.get("note_kind"),
+        topics: (formData.get("topics") || "").split(",").map((x) => x.trim()).filter(Boolean),
+        concepts: (formData.get("concepts") || "").split(",").map((x) => x.trim()).filter(Boolean),
+        people: (formData.get("people") || "").split(",").map((x) => x.trim()).filter(Boolean),
+        sources: (formData.get("sources") || "").split(",").map((x) => x.trim()).filter(Boolean),
+        projects: (formData.get("projects") || "").split(",").map((x) => x.trim()).filter(Boolean),
         tags: (formData.get("tags") || "").split(",").map((x) => x.trim()).filter(Boolean),
-    source_refs: (formData.get("source_refs") || "").split(",").map((x) => x.trim()).filter(Boolean),
-    content: latestOutput,
-    ai_assisted: true
-  };
+        source_refs: (formData.get("source_refs") || "").split(",").map((x) => x.trim()).filter(Boolean),
+        content: latestOutput,
+        ai_assisted: true
+    };
   const response = await fetch("/api/notes/save-draft", {
     method: "POST",
     headers: {"Content-Type": "application/json"},

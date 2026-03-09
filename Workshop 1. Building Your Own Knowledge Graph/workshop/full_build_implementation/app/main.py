@@ -54,9 +54,46 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         )
 
     @app.get("/notes", response_class=HTMLResponse)
-    def notes_page(request: Request) -> HTMLResponse:
+    def notes_page(
+        request: Request,
+        note_kind: str | None = None,
+        topic: str | None = None,
+        concept: str | None = None,
+        person: str | None = None,
+        source: str | None = None,
+        project: str | None = None,
+    ) -> HTMLResponse:
+        notes = note_repository.list_notes()
+        if note_kind:
+            notes = [note for note in notes if note.metadata.note_kind == note_kind]
+        if topic:
+            notes = [note for note in notes if topic in note.metadata.topics]
+        if concept:
+            notes = [note for note in notes if concept in note.metadata.concepts]
+        if person:
+            notes = [note for note in notes if person in note.metadata.people]
+        if source:
+            notes = [note for note in notes if source in note.metadata.sources]
+        if project:
+            notes = [note for note in notes if project in note.metadata.projects]
+        unique_notes = note_repository.list_notes()
         return templates.TemplateResponse(
-            request, "notes.html", {"notes": note_repository.list_notes(), "ai_enabled": settings.ai_enabled, "title": "Notes"}
+            request,
+            "notes.html",
+            {
+                "notes": notes,
+                "all_notes": unique_notes,
+                "ai_enabled": settings.ai_enabled,
+                "title": "Notes",
+                "active_filters": {
+                    "note_kind": note_kind or "",
+                    "topic": topic or "",
+                    "concept": concept or "",
+                    "person": person or "",
+                    "source": source or "",
+                    "project": project or "",
+                },
+            },
         )
 
     @app.get("/notes/{slug}", response_class=HTMLResponse)
@@ -150,8 +187,12 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     def save_draft(request_body: SaveDraftRequest) -> dict:
         note = note_repository.save_draft(
             title=request_body.title,
-            topic=request_body.topic,
-            note_type=request_body.note_type,
+            note_kind=request_body.note_kind,
+            topics=request_body.topics,
+            concepts=request_body.concepts,
+            people=request_body.people,
+            sources=request_body.sources,
+            projects=request_body.projects,
             source_refs=request_body.source_refs,
             tags=request_body.tags,
             content=request_body.content,
@@ -201,7 +242,7 @@ def _build_dashboard_summary(
         total_notes=len(notes),
         total_sources=len(sources),
         total_logs=len(logs),
-        note_type_counts=dict(Counter(note.metadata.type for note in notes)),
+        note_kind_counts=dict(Counter(note.metadata.note_kind for note in notes if note.metadata.note_kind)),
         note_status_counts=dict(Counter(note.metadata.status for note in notes)),
         ai_enabled=settings.ai_enabled,
     )

@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-NoteType = Literal["concept", "source", "person", "project"]
+NoteKind = Literal["synthesis", "reflection", "method-note", "brainstorming"]
 NoteStatus = Literal["captured", "ai-drafted", "reviewed", "final"]
 RelationshipType = Literal["related_to", "supports", "contradicts", "applies_to", "mentions"]
 AiTaskType = Literal["source_summary", "metadata_extraction", "related_note_suggestion", "question_answering"]
@@ -14,9 +14,13 @@ AiTaskType = Literal["source_summary", "metadata_extraction", "related_note_sugg
 class NoteMetadata(BaseModel):
     id: str
     title: str
-    type: NoteType
-    topic: str | None = None
+    note_kind: NoteKind | str | None = None
     status: NoteStatus
+    topics: list[str] = Field(default_factory=list)
+    concepts: list[str] = Field(default_factory=list)
+    people: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
     created: str
@@ -92,8 +96,12 @@ class AiLogEntry(BaseModel):
 
 class SaveDraftRequest(BaseModel):
     title: str
-    topic: str | None = None
-    note_type: NoteType
+    note_kind: NoteKind | str | None = None
+    topics: list[str] = Field(default_factory=list)
+    concepts: list[str] = Field(default_factory=list)
+    people: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     content: str
@@ -109,6 +117,6 @@ class DashboardSummary(BaseModel):
     total_notes: int
     total_sources: int
     total_logs: int
-    note_type_counts: dict[str, int]
+    note_kind_counts: dict[str, int]
     note_status_counts: dict[str, int]
     ai_enabled: bool

@@ -31,14 +31,30 @@ class NoteRepository:
     def save_draft(
         self,
         title: str,
-        topic: str | None,
-        note_type: str,
+        note_kind: str | None,
+        topics: list[str],
+        concepts: list[str],
+        people: list[str],
+        sources: list[str],
+        projects: list[str],
         source_refs: list[str],
         tags: list[str],
         content: str,
         ai_assisted: bool,
     ) -> Note:
-        filename, markdown = build_note_markdown(title, topic, note_type, source_refs, tags, content, ai_assisted)
+        filename, markdown = build_note_markdown(
+            title,
+            note_kind,
+            topics,
+            concepts,
+            people,
+            sources,
+            projects,
+            source_refs,
+            tags,
+            content,
+            ai_assisted,
+        )
         path = self.notes_dir / filename
         path.write_text(markdown, encoding="utf-8")
         return self._load_note(path)

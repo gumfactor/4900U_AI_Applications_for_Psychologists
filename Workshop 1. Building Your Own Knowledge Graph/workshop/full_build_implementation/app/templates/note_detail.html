@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-    <div><p class="eyebrow">{{ note.metadata.type }}</p><h2>{{ note.metadata.title }}</h2></div>
+    <div><p class="eyebrow">{{ note.metadata.note_kind or "note" }}</p><h2>{{ note.metadata.title }}</h2></div>
     <div class="status-card">
         <strong>Status</strong>
         <p>{{ note.metadata.status }}</p>
@@ -19,10 +19,19 @@
         <h3>Metadata</h3>
         <ul class="clean-list">
             <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
-            <li><span>Topic</span><strong>{{ note.metadata.topic or "n/a" }}</strong></li>
+            <li><span>Note Kind</span><strong>{{ note.metadata.note_kind or "n/a" }}</strong></li>
             <li><span>Created</span><strong>{{ note.metadata.created }}</strong></li>
             <li><span>Updated</span><strong>{{ note.metadata.updated }}</strong></li>
             <li><span>Tags</span><strong>{{ note.metadata.tags | join(", ") }}</strong></li>
+        </ul>
+        <h3>Entity Attributes</h3>
+        <ul class="clean-list">
+            <li><span>Topics</span><strong>{{ note.metadata.topics | join(", ") or "n/a" }}</strong></li>
+            <li><span>Concepts</span><strong>{{ note.metadata.concepts | join(", ") or "n/a" }}</strong></li>
+            <li><span>People</span><strong>{{ note.metadata.people | join(", ") or "n/a" }}</strong></li>
+            <li><span>Sources</span><strong>{{ note.metadata.sources | join(", ") or "n/a" }}</strong></li>
+            <li><span>Projects</span><strong>{{ note.metadata.projects | join(", ") or "n/a" }}</strong></li>
+            <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
         </ul>
         <h3>Evidence / Sources</h3>
         <ul>{% for item in note.evidence %}<li>{{ item }}</li>{% endfor %}</ul>

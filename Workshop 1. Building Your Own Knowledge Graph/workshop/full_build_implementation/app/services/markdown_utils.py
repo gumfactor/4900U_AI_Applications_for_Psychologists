@@ -78,6 +78,28 @@ def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     for key in ("created", "updated"):
         if key in normalized and normalized[key] is not None:
             normalized[key] = str(normalized[key])
+    legacy_type = normalized.pop("type", None)
+    legacy_topic = normalized.pop("topic", None)
+    normalized.setdefault("topics", [])
+    normalized.setdefault("concepts", [])
+    normalized.setdefault("people", [])
+    normalized.setdefault("sources", [])
+    normalized.setdefault("projects", [])
+    normalized.setdefault("tags", [])
+    normalized.setdefault("source_refs", [])
+    if legacy_topic:
+        normalized["topics"] = [str(legacy_topic), *normalized["topics"]]
+    if "note_kind" not in normalized:
+        normalized["note_kind"] = None
+    title = str(normalized.get("title", "")).strip()
+    if legacy_type == "concept" and title and not normalized["concepts"]:
+        normalized["concepts"] = [title]
+    if legacy_type == "person" and title and not normalized["people"]:
+        normalized["people"] = [title]
+    if legacy_type == "project" and title and not normalized["projects"]:
+        normalized["projects"] = [title]
+    if legacy_type == "source" and title and not normalized["sources"]:
+        normalized["sources"] = [title]
     return NoteMetadata(**normalized)
 
 
@@ -119,8 +141,12 @@ def ensure_note_body_structure(content: str) -> str:
 
 def build_note_markdown(
     title: str,
-    topic: str | None,
-    note_type: str,
+    note_kind: str | None,
+    topics: list[str],
+    concepts: list[str],
+    people: list[str],
+    sources: list[str],
+    projects: list[str],
     source_refs: list[str],
     tags: list[str],
     content: str,
@@ -128,11 +154,14 @@ def build_note_markdown(
 ) -> tuple[str, str]:
     slug = slugify(title)
     metadata = {
-        "id": f"{note_type}-{slug}",
+        "id": f"note-{slug}",
         "title": title,
-        "type": note_type,
-        "topic": topic or None,
         "status": "ai-drafted" if ai_assisted else "captured",
+        "topics": topics,
+        "concepts": concepts,
+        "people": people,
+        "sources": sources,
+        "projects": projects,
         "tags": tags,
         "source_refs": source_refs,
         "created": today_iso(),
@@ -140,9 +169,11 @@ def build_note_markdown(
         "ai_assisted": ai_assisted,
         "human_reviewed": False,
     }
+    if note_kind:
+        metadata["note_kind"] = note_kind
     note_body = ensure_note_body_structure(content)
     markdown = f"---\n{dump_frontmatter(metadata)}\n---\n\n# {title}\n\n{note_body}\n"
-    return f"{note_type}-{slug}.md", markdown
+    return f"note-{slug}.md", markdown
 
 
 def note_title_from_path(path: Path) -> str:

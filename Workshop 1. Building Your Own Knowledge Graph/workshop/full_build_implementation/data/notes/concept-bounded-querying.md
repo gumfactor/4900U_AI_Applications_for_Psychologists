@@ -1,8 +1,17 @@
 ---
 id: concept-bounded-querying
 title: Bounded Querying
-type: concept
 status: final
+topics:
+  - retrieval
+  - question answering
+concepts:
+  - Bounded Querying
+people: []
+sources:
+  - Bounded Querying
+projects:
+  - Instructor Demo System
 tags:
   - querying
   - retrieval

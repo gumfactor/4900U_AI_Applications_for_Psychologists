@@ -1,6 +1,6 @@
 # Full Build Implementation
 
-This is the instructor-facing reference implementation for the workshop. It extends the student-facing Markdown/YAML workflow into a working FastAPI application with a browse/query UI, bounded Gemini tasks, AI interaction logging, and note draft saving.
+This is the instructor-facing reference implementation for the workshop. It extends the student-facing Markdown/YAML workflow into a working FastAPI application with a browse/query UI, bounded Gemini tasks, AI interaction logging, and note saving built around `note_kind` plus multi-value entity attributes.
 
 ## Quick Start
 

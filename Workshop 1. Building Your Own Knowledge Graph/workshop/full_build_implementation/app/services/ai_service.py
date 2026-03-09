@@ -104,13 +104,23 @@ class AiService:
     @staticmethod
     def _render_note_context(note: Note) -> str:
         return "\n".join(
-            [
-                f"Title: {note.metadata.title}",
-                f"Type: {note.metadata.type}",
-                f"Status: {note.metadata.status}",
-                "Summary:",
-                note.summary,
-                "Key Points:",
-                "\n".join(f"- {point}" for point in note.key_points),
-            ]
+            list(
+                filter(
+                    None,
+                    [
+                        f"Title: {note.metadata.title}",
+                        f"Note Kind: {note.metadata.note_kind}" if note.metadata.note_kind else "",
+                        f"Status: {note.metadata.status}",
+                        f"Topics: {', '.join(note.metadata.topics)}",
+                        f"Concepts: {', '.join(note.metadata.concepts)}",
+                        f"People: {', '.join(note.metadata.people)}",
+                        f"Sources: {', '.join(note.metadata.sources)}",
+                        f"Projects: {', '.join(note.metadata.projects)}",
+                        "Summary:",
+                        note.summary,
+                        "Key Points:",
+                        "\n".join(f"- {point}" for point in note.key_points),
+                    ],
+                )
+            )
         ).strip()

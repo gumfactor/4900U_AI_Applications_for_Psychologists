@@ -21,11 +21,13 @@ def build_test_client() -> TestClient:
     return TestClient(create_app(base_dir=copied_base_dir, gemini_client=FakeGeminiClient()))
 
 
-def test_dashboard_and_notes_routes() -> None:
+def test_notes_and_stats_routes() -> None:
     client = build_test_client()
-    dashboard = client.get("/")
+    notes_page = client.get("/")
+    stats_page = client.get("/stats")
     notes = client.get("/api/notes")
-    assert dashboard.status_code == 200
+    assert notes_page.status_code == 200
+    assert stats_page.status_code == 200
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
 

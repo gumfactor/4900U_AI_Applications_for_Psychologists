@@ -39,6 +39,29 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     templates = Jinja2Templates(directory=str(settings.templates_dir))
 
     @app.get("/", response_class=HTMLResponse)
+    def root_notes_page(
+        request: Request,
+        note_kind: str | None = None,
+        topic: str | None = None,
+        tag: str | None = None,
+        person: str | None = None,
+        source: str | None = None,
+        project: str | None = None,
+    ) -> HTMLResponse:
+        return _render_notes_page(
+            request=request,
+            templates=templates,
+            note_repository=note_repository,
+            settings=settings,
+            note_kind=note_kind,
+            topic=topic,
+            tag=tag,
+            person=person,
+            source=source,
+            project=project,
+        )
+
+    @app.get("/stats", response_class=HTMLResponse)
     def dashboard(request: Request) -> HTMLResponse:
         summary = _build_dashboard_summary(settings, note_repository, source_repository, log_service)
         return templates.TemplateResponse(
@@ -49,7 +72,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "recent_notes": note_repository.list_notes()[:5],
                 "recent_logs": log_service.list_logs()[:5],
                 "ai_enabled": settings.ai_enabled,
-                "title": "Dashboard",
+                "title": "Stats",
             },
         )
 
@@ -63,37 +86,17 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         source: str | None = None,
         project: str | None = None,
     ) -> HTMLResponse:
-        notes = note_repository.list_notes()
-        if note_kind:
-            notes = [note for note in notes if note.metadata.note_kind == note_kind]
-        if topic:
-            notes = [note for note in notes if topic in note.metadata.topics]
-        if tag:
-            notes = [note for note in notes if tag in note.metadata.tags]
-        if person:
-            notes = [note for note in notes if person in note.metadata.people]
-        if source:
-            notes = [note for note in notes if source in note.metadata.sources]
-        if project:
-            notes = [note for note in notes if project in note.metadata.projects]
-        unique_notes = note_repository.list_notes()
-        return templates.TemplateResponse(
-            request,
-            "notes.html",
-            {
-                "notes": notes,
-                "all_notes": unique_notes,
-                "ai_enabled": settings.ai_enabled,
-                "title": "Notes",
-                "active_filters": {
-                    "note_kind": note_kind or "",
-                    "topic": topic or "",
-                    "tag": tag or "",
-                    "person": person or "",
-                    "source": source or "",
-                    "project": project or "",
-                },
-            },
+        return _render_notes_page(
+            request=request,
+            templates=templates,
+            note_repository=note_repository,
+            settings=settings,
+            note_kind=note_kind,
+            topic=topic,
+            tag=tag,
+            person=person,
+            source=source,
+            project=project,
         )
 
     @app.get("/notes/{slug}", response_class=HTMLResponse)
@@ -244,6 +247,52 @@ def _build_dashboard_summary(
         note_kind_counts=dict(Counter(note.metadata.note_kind for note in notes if note.metadata.note_kind)),
         note_status_counts=dict(Counter(note.metadata.status for note in notes)),
         ai_enabled=settings.ai_enabled,
+    )
+
+
+def _render_notes_page(
+    request: Request,
+    templates: Jinja2Templates,
+    note_repository: NoteRepository,
+    settings: Settings,
+    note_kind: str | None = None,
+    topic: str | None = None,
+    tag: str | None = None,
+    person: str | None = None,
+    source: str | None = None,
+    project: str | None = None,
+) -> HTMLResponse:
+    notes = note_repository.list_notes()
+    if note_kind:
+        notes = [note for note in notes if note.metadata.note_kind == note_kind]
+    if topic:
+        notes = [note for note in notes if topic in note.metadata.topics]
+    if tag:
+        notes = [note for note in notes if tag in note.metadata.tags]
+    if person:
+        notes = [note for note in notes if person in note.metadata.people]
+    if source:
+        notes = [note for note in notes if source in note.metadata.sources]
+    if project:
+        notes = [note for note in notes if project in note.metadata.projects]
+    unique_notes = note_repository.list_notes()
+    return templates.TemplateResponse(
+        request,
+        "notes.html",
+        {
+            "notes": notes,
+            "all_notes": unique_notes,
+            "ai_enabled": settings.ai_enabled,
+            "title": "Notes",
+            "active_filters": {
+                "note_kind": note_kind or "",
+                "topic": topic or "",
+                "tag": tag or "",
+                "person": person or "",
+                "source": source or "",
+                "project": project or "",
+            },
+        },
     )
 
 

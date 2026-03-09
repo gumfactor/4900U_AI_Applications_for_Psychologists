@@ -22,7 +22,7 @@
             </label>
             <label>Note Kind
                 <select name="note_kind">
-                    <option value="">No special kind</option>
+                    <option value="" selected>Select note kind (optional)</option>
                     <option value="synthesis">synthesis</option>
                     <option value="reflection">reflection</option>
                     <option value="method-note">method-note</option>
@@ -48,7 +48,7 @@
                 <input name="source_refs" type="text" placeholder="Comma separated source refs">
             </label>
             <label>Main Body
-                <textarea name="content" rows="14" placeholder="Write the note body here. If you paste unstructured text, the app will wrap it into the standard note sections."></textarea>
+                <textarea name="content" rows="14" required placeholder="Write the note body here. If you paste unstructured text, the app will wrap it into the standard note sections."></textarea>
             </label>
             <label class="inline-checkbox">
                 <input name="ai_assisted" type="checkbox">
@@ -63,10 +63,11 @@
     <header class="site-header">
         <div>
             <p class="eyebrow">Instructor Demo</p>
-            <h1><a href="/">AI-Assisted Personal Knowledge Base</a></h1>
+            <h1><a href="/notes">AI-Assisted Personal Knowledge Base</a></h1>
         </div>
         <nav>
             <a href="/notes">Notes</a>
+            <a href="/stats">Stats</a>
             <a href="/sources">Sources</a>
             <a href="/ai">AI Tasks</a>
             <a href="/logs">Logs</a>

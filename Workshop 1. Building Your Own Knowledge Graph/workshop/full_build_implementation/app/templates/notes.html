@@ -27,11 +27,11 @@
                 {% endfor %}
             </datalist>
         </label>
-        <label>Concept
-            <input name="concept" type="text" value="{{ active_filters.concept }}" list="concepts">
-            <datalist id="concepts">
+        <label>Tag
+            <input name="tag" type="text" value="{{ active_filters.tag }}" list="tags">
+            <datalist id="tags">
                 {% for note in all_notes %}
-                {% for value in note.metadata.concepts %}
+                {% for value in note.metadata.tags %}
                 <option value="{{ value }}"></option>
                 {% endfor %}
                 {% endfor %}
@@ -82,7 +82,7 @@
         </div>
         <p class="attribute-chip-group">
             {% for topic in note.metadata.topics %}<span class="attribute-chip">topic: {{ topic }}</span>{% endfor %}
-            {% for concept in note.metadata.concepts %}<span class="attribute-chip">concept: {{ concept }}</span>{% endfor %}
+            {% for tag in note.metadata.tags %}<span class="attribute-chip">tag: {{ tag }}</span>{% endfor %}
             {% for person in note.metadata.people %}<span class="attribute-chip">person: {{ person }}</span>{% endfor %}
             {% for source in note.metadata.sources %}<span class="attribute-chip">source: {{ source }}</span>{% endfor %}
             {% for project in note.metadata.projects %}<span class="attribute-chip">project: {{ project }}</span>{% endfor %}

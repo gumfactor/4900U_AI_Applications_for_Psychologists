@@ -58,7 +58,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         request: Request,
         note_kind: str | None = None,
         topic: str | None = None,
-        concept: str | None = None,
+        tag: str | None = None,
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
@@ -68,8 +68,8 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             notes = [note for note in notes if note.metadata.note_kind == note_kind]
         if topic:
             notes = [note for note in notes if topic in note.metadata.topics]
-        if concept:
-            notes = [note for note in notes if concept in note.metadata.concepts]
+        if tag:
+            notes = [note for note in notes if tag in note.metadata.tags]
         if person:
             notes = [note for note in notes if person in note.metadata.people]
         if source:
@@ -88,7 +88,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "active_filters": {
                     "note_kind": note_kind or "",
                     "topic": topic or "",
-                    "concept": concept or "",
+                    "tag": tag or "",
                     "person": person or "",
                     "source": source or "",
                     "project": project or "",
@@ -189,7 +189,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             title=request_body.title,
             note_kind=request_body.note_kind,
             topics=request_body.topics,
-            concepts=request_body.concepts,
             people=request_body.people,
             sources=request_body.sources,
             projects=request_body.projects,

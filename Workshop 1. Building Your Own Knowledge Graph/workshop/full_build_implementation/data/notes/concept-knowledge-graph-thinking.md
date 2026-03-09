@@ -5,15 +5,14 @@ status: reviewed
 topics:
   - knowledge graphs
   - personal knowledge bases
-concepts:
-  - Knowledge Graph Thinking
-  - Personal Knowledge Base
 people: []
 sources:
   - PKB Design Principles
 projects:
   - Instructor Demo System
 tags:
+  - Knowledge Graph Thinking
+  - Personal Knowledge Base
   - graph
   - links
   - relationships

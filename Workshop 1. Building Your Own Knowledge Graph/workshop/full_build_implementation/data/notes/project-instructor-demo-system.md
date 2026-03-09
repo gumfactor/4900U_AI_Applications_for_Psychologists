@@ -5,10 +5,6 @@ status: final
 topics:
   - workshop infrastructure
   - personal knowledge bases
-concepts:
-  - Personal Knowledge Base
-  - AI Provenance Logging
-  - Bounded Querying
 people:
   - Workshop Instructor
 sources:
@@ -18,6 +14,9 @@ sources:
 projects:
   - Instructor Demo System
 tags:
+  - Personal Knowledge Base
+  - AI Provenance Logging
+  - Bounded Querying
   - demo
   - fastapi
   - workshop

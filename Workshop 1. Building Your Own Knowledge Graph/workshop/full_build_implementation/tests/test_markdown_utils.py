@@ -8,8 +8,6 @@ title: Example
 status: captured
 topics:
   - testing
-concepts:
-  - Example
 people: []
 sources: []
 projects: []
@@ -45,7 +43,6 @@ def test_build_note_markdown_includes_required_sections() -> None:
         title="Demo Note",
         note_kind="synthesis",
         topics=["Knowledge Work"],
-        concepts=["Demo Note"],
         people=["Ada Lovelace"],
         sources=["Demo Source"],
         projects=["PKB Demo"],
@@ -79,4 +76,4 @@ def test_validate_metadata_supports_legacy_type_and_topic() -> None:
     )
     assert metadata.note_kind is None
     assert metadata.topics == ["Legacy Topic"]
-    assert metadata.concepts == ["Legacy Concept"]
+    assert metadata.tags[0] == "Legacy Concept"

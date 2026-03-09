@@ -17,7 +17,6 @@ class NoteMetadata(BaseModel):
     note_kind: NoteKind | str | None = None
     status: NoteStatus
     topics: list[str] = Field(default_factory=list)
-    concepts: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     projects: list[str] = Field(default_factory=list)
@@ -98,7 +97,6 @@ class SaveDraftRequest(BaseModel):
     title: str
     note_kind: NoteKind | str | None = None
     topics: list[str] = Field(default_factory=list)
-    concepts: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     projects: list[str] = Field(default_factory=list)

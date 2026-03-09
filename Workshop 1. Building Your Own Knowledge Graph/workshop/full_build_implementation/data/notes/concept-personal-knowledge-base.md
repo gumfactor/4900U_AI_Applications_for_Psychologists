@@ -5,14 +5,13 @@ status: final
 topics:
   - knowledge management
   - personal knowledge bases
-concepts:
-  - Personal Knowledge Base
 people: []
 sources:
   - PKB Design Principles
 projects:
   - Instructor Demo System
 tags:
+  - Personal Knowledge Base
   - pkb
   - notes
   - structure

@@ -5,8 +5,6 @@ status: final
 topics:
   - ai-assisted learning
   - review workflows
-concepts:
-  - AI Review Discipline
 people:
   - Workshop Instructor
 sources:
@@ -14,6 +12,7 @@ sources:
 projects:
   - Instructor Demo System
 tags:
+  - AI Review Discipline
   - ai
   - review
   - provenance

@@ -5,9 +5,6 @@ status: final
 topics:
   - teaching
   - ai-assisted learning
-concepts:
-  - AI Review Discipline
-  - AI Provenance Logging
 people:
   - Workshop Instructor
 sources:
@@ -15,6 +12,8 @@ sources:
 projects:
   - Instructor Demo System
 tags:
+  - AI Review Discipline
+  - AI Provenance Logging
   - instructor
   - teaching
   - facilitation

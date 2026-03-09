@@ -27,7 +27,7 @@
         <h3>Entity Attributes</h3>
         <ul class="clean-list">
             <li><span>Topics</span><strong>{{ note.metadata.topics | join(", ") or "n/a" }}</strong></li>
-            <li><span>Concepts</span><strong>{{ note.metadata.concepts | join(", ") or "n/a" }}</strong></li>
+            <li><span>Tags</span><strong>{{ note.metadata.tags | join(", ") or "n/a" }}</strong></li>
             <li><span>People</span><strong>{{ note.metadata.people | join(", ") or "n/a" }}</strong></li>
             <li><span>Sources</span><strong>{{ note.metadata.sources | join(", ") or "n/a" }}</strong></li>
             <li><span>Projects</span><strong>{{ note.metadata.projects | join(", ") or "n/a" }}</strong></li>

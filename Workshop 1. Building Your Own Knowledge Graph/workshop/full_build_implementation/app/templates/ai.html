@@ -69,7 +69,6 @@
                     </select>
                 </label>
                 <label>Topics <input name="topics" type="text" placeholder="Comma separated topics"></label>
-                <label>Concepts <input name="concepts" type="text" placeholder="Comma separated concepts"></label>
                 <label>People <input name="people" type="text" placeholder="Comma separated people"></label>
                 <label>Sources <input name="sources" type="text" placeholder="Comma separated source labels"></label>
                 <label>Projects <input name="projects" type="text" placeholder="Comma separated projects"></label>
@@ -119,7 +118,6 @@ saveForm?.addEventListener("submit", async (event) => {
         title: formData.get("title"),
         note_kind: formData.get("note_kind"),
         topics: (formData.get("topics") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        concepts: (formData.get("concepts") || "").split(",").map((x) => x.trim()).filter(Boolean),
         people: (formData.get("people") || "").split(",").map((x) => x.trim()).filter(Boolean),
         sources: (formData.get("sources") || "").split(",").map((x) => x.trim()).filter(Boolean),
         projects: (formData.get("projects") || "").split(",").map((x) => x.trim()).filter(Boolean),

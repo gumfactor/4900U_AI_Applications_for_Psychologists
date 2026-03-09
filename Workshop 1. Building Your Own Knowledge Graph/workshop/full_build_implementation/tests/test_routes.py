@@ -43,7 +43,6 @@ def test_ai_run_and_save_draft_routes() -> None:
             "title": "Runtime Draft",
             "note_kind": "synthesis",
             "topics": ["Testing"],
-            "concepts": ["Runtime Draft"],
             "people": ["Test User"],
             "sources": ["PKB Design Principles"],
             "projects": ["Instructor Demo System"],

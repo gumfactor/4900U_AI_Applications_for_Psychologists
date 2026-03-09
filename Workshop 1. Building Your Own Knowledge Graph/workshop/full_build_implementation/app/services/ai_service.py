@@ -112,7 +112,7 @@ class AiService:
                         f"Note Kind: {note.metadata.note_kind}" if note.metadata.note_kind else "",
                         f"Status: {note.metadata.status}",
                         f"Topics: {', '.join(note.metadata.topics)}",
-                        f"Concepts: {', '.join(note.metadata.concepts)}",
+                        f"Tags: {', '.join(note.metadata.tags)}",
                         f"People: {', '.join(note.metadata.people)}",
                         f"Sources: {', '.join(note.metadata.sources)}",
                         f"Projects: {', '.join(note.metadata.projects)}",

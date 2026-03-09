@@ -25,7 +25,6 @@ def test_seeded_notes_use_refactored_schema() -> None:
     for path in notes_dir.glob("*.md"):
         text = path.read_text(encoding="utf-8")
         assert "topics:" in text
-        assert "concepts:" in text
         assert "people:" in text
         assert "sources:" in text
         assert "projects:" in text

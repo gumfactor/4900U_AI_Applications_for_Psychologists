@@ -5,14 +5,13 @@ status: final
 topics:
   - retrieval
   - question answering
-concepts:
-  - Bounded Querying
 people: []
 sources:
   - Bounded Querying
 projects:
   - Instructor Demo System
 tags:
+  - Bounded Querying
   - querying
   - retrieval
   - scope

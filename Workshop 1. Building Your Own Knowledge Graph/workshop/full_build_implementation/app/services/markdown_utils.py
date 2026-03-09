@@ -81,7 +81,6 @@ def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     legacy_type = normalized.pop("type", None)
     legacy_topic = normalized.pop("topic", None)
     normalized.setdefault("topics", [])
-    normalized.setdefault("concepts", [])
     normalized.setdefault("people", [])
     normalized.setdefault("sources", [])
     normalized.setdefault("projects", [])
@@ -92,8 +91,11 @@ def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     if "note_kind" not in normalized:
         normalized["note_kind"] = None
     title = str(normalized.get("title", "")).strip()
-    if legacy_type == "concept" and title and not normalized["concepts"]:
-        normalized["concepts"] = [title]
+    legacy_concepts = normalized.pop("concepts", [])
+    if legacy_concepts:
+        normalized["tags"] = [*legacy_concepts, *normalized["tags"]]
+    if legacy_type == "concept" and title and title not in normalized["tags"]:
+        normalized["tags"] = [title, *normalized["tags"]]
     if legacy_type == "person" and title and not normalized["people"]:
         normalized["people"] = [title]
     if legacy_type == "project" and title and not normalized["projects"]:
@@ -143,7 +145,6 @@ def build_note_markdown(
     title: str,
     note_kind: str | None,
     topics: list[str],
-    concepts: list[str],
     people: list[str],
     sources: list[str],
     projects: list[str],
@@ -158,7 +159,6 @@ def build_note_markdown(
         "title": title,
         "status": "ai-drafted" if ai_assisted else "captured",
         "topics": topics,
-        "concepts": concepts,
         "people": people,
         "sources": sources,
         "projects": projects,

@@ -5,8 +5,6 @@ status: final
 topics:
   - markdown
   - knowledge management
-concepts:
-  - Structured Markdown Notes
 people:
   - Workshop Instructor
 sources:
@@ -14,6 +12,7 @@ sources:
 projects:
   - Instructor Demo System
 tags:
+  - Structured Markdown Notes
   - markdown
   - frontmatter
   - portability

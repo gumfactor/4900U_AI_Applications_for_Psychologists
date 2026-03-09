@@ -5,9 +5,6 @@ status: reviewed
 topics:
   - ai-assisted learning
   - reproducibility
-concepts:
-  - AI Provenance Logging
-  - AI Review Discipline
 people:
   - Workshop Instructor
 sources:
@@ -15,6 +12,8 @@ sources:
 projects:
   - Instructor Demo System
 tags:
+  - AI Provenance Logging
+  - AI Review Discipline
   - ai
   - logs
   - reproducibility

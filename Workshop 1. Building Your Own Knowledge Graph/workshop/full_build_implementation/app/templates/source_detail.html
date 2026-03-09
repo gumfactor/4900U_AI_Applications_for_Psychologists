@@ -1,7 +1,191 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-    <div><p class="eyebrow">Source</p><h2>{{ source.title }}</h2></div>
+    <div>
+        <p class="eyebrow">Source</p>
+        <h2>{{ source.title }}</h2>
+    </div>
+    <div class="page-header-actions">
+        <a href="/sources" class="ghost-link">Back To Sources</a>
+    </div>
 </section>
-<article class="panel prose-block"><pre>{{ source.content }}</pre></article>
+<section class="grid two-up">
+    <article class="panel prose-block">
+        <h3>Source Text</h3>
+        <pre>{{ source.content }}</pre>
+    </article>
+    <article class="panel">
+        <h3>Create Draft From Source</h3>
+        <p class="muted-text">Run a bounded source-summary task on this document, then review AI-suggested metadata before saving the draft note.</p>
+        {% if not ai_enabled %}
+        <p class="muted-text">AI is disabled. Add <code>GEMINI_API_KEY</code> to enable draft generation from sources.</p>
+        {% else %}
+        <form id="source-draft-form" class="note-form">
+            <label>Model
+                <select name="model">
+                    <option value="{{ default_model }}">{{ default_model }}</option>
+                    <option value="{{ high_quality_model }}">{{ high_quality_model }}</option>
+                </select>
+            </label>
+            <button type="submit" class="inline-button">Generate Draft</button>
+        </form>
+        <pre id="source-ai-output">Run the source summary task to preview a draft note.</pre>
+        <div id="source-save-shell" class="save-shell hidden">
+            <h4>Save Draft Note</h4>
+            <p class="muted-text">AI will suggest note attributes from the generated draft before final save.</p>
+            <form id="source-save-form" class="note-form">
+                <label>Title <input name="title" type="text" required value="{{ source.title }}"></label>
+                <label>Note Kind
+                    <select name="note_kind">
+                        <option value="" selected>Select note kind (optional)</option>
+                        <option value="synthesis">synthesis</option>
+                        <option value="reflection">reflection</option>
+                        <option value="method-note">method-note</option>
+                        <option value="brainstorming">brainstorming</option>
+                    </select>
+                </label>
+                <label>Topics <input name="topics" type="text" placeholder="Optional override"></label>
+                <label>People <input name="people" type="text" placeholder="Optional override"></label>
+                <label>Sources <input name="sources" type="text" placeholder="Optional override"></label>
+                <label>Projects <input name="projects" type="text" placeholder="Optional override"></label>
+                <label>Tags <input name="tags" type="text" placeholder="Optional override"></label>
+                <label>Source refs <input name="source_refs" type="text" value="{{ source.path }}"></label>
+                <button type="submit" class="inline-button">Save Draft</button>
+            </form>
+            <p id="source-save-feedback" class="muted-text"></p>
+        </div>
+        {% endif %}
+    </article>
+</section>
+{% if ai_enabled %}
+<script>
+const sourceDraftForm = document.getElementById("source-draft-form");
+const sourceSaveForm = document.getElementById("source-save-form");
+const sourceAiOutput = document.getElementById("source-ai-output");
+const sourceSaveShell = document.getElementById("source-save-shell");
+const sourceSaveFeedback = document.getElementById("source-save-feedback");
+let latestSourceOutput = "";
+let lastSourceMetadataSignature = null;
+
+function splitCsv(value) {
+  return (value || "").split(",").map((x) => x.trim()).filter(Boolean);
+}
+
+function uniqueMerge(primary, secondary) {
+  const merged = [];
+  const seen = new Set();
+  for (const value of [...primary, ...secondary]) {
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    merged.push(value);
+  }
+  return merged;
+}
+
+function buildMetadataSignature(formData) {
+  return JSON.stringify({
+    title: String(formData.get("title") || "").trim(),
+    content: latestSourceOutput.trim(),
+    source_refs: splitCsv(formData.get("source_refs"))
+  });
+}
+
+async function inferMetadata(formData) {
+  const response = await fetch("/api/notes/infer-metadata", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      title: formData.get("title"),
+      content: latestSourceOutput,
+      source_refs: splitCsv(formData.get("source_refs"))
+    })
+  });
+  return { ok: response.ok, data: await response.json() };
+}
+
+function applyInferredMetadata(formData, inferred) {
+  const noteKindField = sourceSaveForm.querySelector('[name="note_kind"]');
+  if (!noteKindField.value && inferred.note_kind) {
+    noteKindField.value = inferred.note_kind;
+  }
+  for (const fieldName of ["topics", "people", "sources", "projects", "tags", "source_refs"]) {
+    const field = sourceSaveForm.querySelector(`[name="${fieldName}"]`);
+    const currentValues = splitCsv(formData.get(fieldName));
+    const inferredValues = Array.isArray(inferred[fieldName]) ? inferred[fieldName] : [];
+    field.value = uniqueMerge(currentValues, inferredValues).join(", ");
+  }
+}
+
+async function saveDraft(formData, metadataReviewed) {
+  const payload = {
+    title: formData.get("title"),
+    note_kind: formData.get("note_kind") || null,
+    topics: splitCsv(formData.get("topics")),
+    people: splitCsv(formData.get("people")),
+    sources: splitCsv(formData.get("sources")),
+    projects: splitCsv(formData.get("projects")),
+    tags: splitCsv(formData.get("tags")),
+    source_refs: splitCsv(formData.get("source_refs")),
+    content: latestSourceOutput,
+    ai_assisted: true,
+    metadata_reviewed: metadataReviewed
+  };
+  const response = await fetch("/api/notes/save-draft", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  return { ok: response.ok, data: await response.json() };
+}
+
+sourceDraftForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(sourceDraftForm);
+  const response = await fetch("/api/ai/run", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      task: "source_summary",
+      model: formData.get("model"),
+      source_slug: "{{ source.slug }}"
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    sourceAiOutput.textContent = data.detail || "Task failed.";
+    sourceSaveShell.classList.add("hidden");
+    return;
+  }
+  latestSourceOutput = data.output_text;
+  sourceAiOutput.textContent = data.output_text;
+  sourceSaveShell.classList.remove("hidden");
+  sourceSaveFeedback.textContent = "";
+});
+
+sourceSaveForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(sourceSaveForm);
+  const metadataSignature = buildMetadataSignature(formData);
+  if (metadataSignature !== lastSourceMetadataSignature) {
+    const inferredResponse = await inferMetadata(formData);
+    if (!inferredResponse.ok) {
+      sourceSaveFeedback.textContent = `${inferredResponse.data.detail || "Could not infer metadata."} Saving with current fields is still available.`;
+    } else if (!inferredResponse.data.ai_enabled) {
+      sourceSaveFeedback.textContent = "AI metadata inference is unavailable. Saving with current fields is still available.";
+    } else {
+      applyInferredMetadata(formData, inferredResponse.data);
+      lastSourceMetadataSignature = metadataSignature;
+      sourceSaveFeedback.textContent = "AI suggested note attributes. Review or edit them, then click Save Draft again.";
+      return;
+    }
+  }
+  const saveResponse = await saveDraft(formData, metadataSignature === lastSourceMetadataSignature);
+  if (!saveResponse.ok) {
+    sourceSaveFeedback.textContent = saveResponse.data.detail || "Saving failed.";
+    return;
+  }
+  window.location.href = `/notes/${saveResponse.data.slug}`;
+});
+</script>
+{% endif %}
 {% endblock %}

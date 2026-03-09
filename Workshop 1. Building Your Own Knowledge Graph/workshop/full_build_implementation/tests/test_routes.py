@@ -41,10 +41,13 @@ def test_notes_and_stats_routes() -> None:
     notes_page = client.get("/")
     stats_page = client.get("/stats")
     row_notes_page = client.get("/notes?view=row")
+    searched_notes_page = client.get("/notes?q=provenance")
     notes = client.get("/api/notes")
     assert notes_page.status_code == 200
     assert stats_page.status_code == 200
     assert row_notes_page.status_code == 200
+    assert searched_notes_page.status_code == 200
+    assert "AI Provenance Logging" in searched_notes_page.text
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
 
@@ -134,3 +137,32 @@ def test_note_detail_shows_provenance() -> None:
     assert response.status_code == 200
     assert "Provenance" in response.text
     assert "Related AI logs" in response.text
+
+
+def test_source_detail_supports_draft_generation() -> None:
+    client = build_test_client()
+    response = client.get("/sources/source-pkb-design-principles")
+    assert response.status_code == 200
+    assert "Create Draft From Source" in response.text
+
+
+def test_logs_link_to_affected_notes() -> None:
+    client = build_test_client()
+    client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Log Link Draft",
+            "note_kind": "synthesis",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": ["data/sources/source-pkb-design-principles.md"],
+            "tags": [],
+            "content": "Draft body for log linkage.",
+            "ai_assisted": True,
+        },
+    )
+    logs_page = client.get("/logs")
+    assert logs_page.status_code == 200
+    assert "Open affected note" in logs_page.text

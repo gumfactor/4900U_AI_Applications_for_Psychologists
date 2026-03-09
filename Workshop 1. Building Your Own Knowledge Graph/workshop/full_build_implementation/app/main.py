@@ -50,6 +50,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     @app.get("/", response_class=HTMLResponse)
     def root_notes_page(
         request: Request,
+        q: str | None = None,
         note_kind: str | None = None,
         topic: str | None = None,
         tag: str | None = None,
@@ -63,6 +64,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             templates=templates,
             note_repository=note_repository,
             settings=settings,
+            q=q,
             note_kind=note_kind,
             topic=topic,
             tag=tag,
@@ -90,6 +92,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     @app.get("/notes", response_class=HTMLResponse)
     def notes_page(
         request: Request,
+        q: str | None = None,
         note_kind: str | None = None,
         topic: str | None = None,
         tag: str | None = None,
@@ -103,6 +106,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             templates=templates,
             note_repository=note_repository,
             settings=settings,
+            q=q,
             note_kind=note_kind,
             topic=topic,
             tag=tag,
@@ -180,13 +184,28 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return templates.TemplateResponse(
-            request, "source_detail.html", {"source": source, "ai_enabled": settings.ai_enabled, "title": source.title}
+            request,
+            "source_detail.html",
+            {
+                "source": source,
+                "ai_enabled": settings.ai_enabled,
+                "default_model": settings.default_model,
+                "high_quality_model": settings.high_quality_model,
+                "title": source.title,
+            },
         )
 
     @app.get("/logs", response_class=HTMLResponse)
     def logs_page(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
-            request, "logs.html", {"logs": log_service.list_logs(), "ai_enabled": settings.ai_enabled, "title": "Logs"}
+            request,
+            "logs.html",
+            {
+                "logs": log_service.list_logs(),
+                "ai_enabled": settings.ai_enabled,
+                "title": "Logs",
+                "note_href_for_log": _note_href_for_log,
+            },
         )
 
     @app.get("/logs/{slug}", response_class=HTMLResponse)
@@ -196,7 +215,14 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return templates.TemplateResponse(
-            request, "log_detail.html", {"log_entry": log_entry, "ai_enabled": settings.ai_enabled, "title": "Log Detail"}
+            request,
+            "log_detail.html",
+            {
+                "log_entry": log_entry,
+                "ai_enabled": settings.ai_enabled,
+                "title": "Log Detail",
+                "note_href_for_log": _note_href_for_log,
+            },
         )
 
     @app.get("/ai", response_class=HTMLResponse)
@@ -424,6 +450,7 @@ def _render_notes_page(
     templates: Jinja2Templates,
     note_repository: NoteRepository,
     settings: Settings,
+    q: str | None = None,
     note_kind: str | None = None,
     topic: str | None = None,
     tag: str | None = None,
@@ -434,6 +461,15 @@ def _render_notes_page(
 ) -> HTMLResponse:
     view_mode = view if view in {"grid", "row"} else "grid"
     notes = note_repository.list_notes()
+    if q:
+        search = q.lower().strip()
+        notes = [
+            note
+            for note in notes
+            if search in note.metadata.title.lower()
+            or search in note.summary.lower()
+            or search in note.raw_body.lower()
+        ]
     if note_kind:
         notes = [note for note in notes if note.metadata.note_kind == note_kind]
     if topic:
@@ -459,6 +495,7 @@ def _render_notes_page(
             "build_explore_href": _build_explore_href,
             "active_filters": {
                 "note_kind": note_kind or "",
+                "q": q or "",
                 "topic": topic or "",
                 "tag": tag or "",
                 "person": person or "",
@@ -521,6 +558,14 @@ def _build_explore_href(kind: str, value: str) -> str:
 
 def _logs_for_note(logs: list, note_path: str) -> list:
     return [log for log in logs if log.output_target == note_path or note_path in log.input_files]
+
+
+def _note_href_for_log(log_entry) -> str | None:
+    output_target = getattr(log_entry, "output_target", "")
+    if not output_target.startswith("data/notes/") or not output_target.endswith(".md"):
+        return None
+    slug = Path(output_target).stem
+    return f"/notes/{slug}"
 
 
 app = create_app()

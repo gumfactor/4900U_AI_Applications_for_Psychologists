@@ -11,6 +11,9 @@
 </section>
 <section class="panel filter-panel">
     <form method="get" action="/notes" class="filter-grid">
+        <label>Search
+            <input name="q" type="text" value="{{ active_filters.q }}" placeholder="Search title, summary, or body">
+        </label>
         <label>Note Kind
             <input name="note_kind" type="text" value="{{ active_filters.note_kind }}" list="note-kinds">
             <datalist id="note-kinds">

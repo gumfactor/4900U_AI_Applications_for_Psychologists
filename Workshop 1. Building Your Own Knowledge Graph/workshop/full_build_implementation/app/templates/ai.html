@@ -57,6 +57,7 @@
         <pre id="ai-output">Run a task to preview the output.</pre>
         <div id="save-draft-shell" class="save-shell hidden">
             <h4>Save Draft Note</h4>
+            <p class="muted-text">AI will suggest note attributes from the generated draft before final save. You can review or override them here.</p>
             <form id="save-draft-form">
                 <label>Title <input name="title" type="text" required></label>
                 <label>Note Kind
@@ -76,6 +77,7 @@
                 <label>Source refs (comma separated) <input name="source_refs" type="text"></label>
                 <button type="submit">Save Draft</button>
             </form>
+            <p id="save-draft-feedback" class="muted-text"></p>
         </div>
     </article>
 </section>
@@ -84,7 +86,84 @@ const aiForm = document.getElementById("ai-form");
 const saveForm = document.getElementById("save-draft-form");
 const output = document.getElementById("ai-output");
 const saveShell = document.getElementById("save-draft-shell");
+const saveDraftFeedback = document.getElementById("save-draft-feedback");
+const aiEnabled = {{ "true" if ai_enabled else "false" }};
 let latestOutput = "";
+let lastAiMetadataSignature = null;
+
+function splitCsv(value) {
+  return (value || "").split(",").map((x) => x.trim()).filter(Boolean);
+}
+
+function uniqueMerge(primary, secondary) {
+  const merged = [];
+  const seen = new Set();
+  for (const value of [...primary, ...secondary]) {
+    if (!value || seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    merged.push(value);
+  }
+  return merged;
+}
+
+function buildMetadataSignature(formData) {
+  return JSON.stringify({
+    title: String(formData.get("title") || "").trim(),
+    content: latestOutput.trim(),
+    source_refs: splitCsv(formData.get("source_refs"))
+  });
+}
+
+async function inferMetadata(formData) {
+  const response = await fetch("/api/notes/infer-metadata", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      title: formData.get("title"),
+      content: latestOutput,
+      source_refs: splitCsv(formData.get("source_refs"))
+    })
+  });
+  return { ok: response.ok, data: await response.json() };
+}
+
+function applyInferredMetadata(formData, inferred) {
+  const noteKindField = saveForm.querySelector('[name="note_kind"]');
+  if (!noteKindField.value && inferred.note_kind) {
+    noteKindField.value = inferred.note_kind;
+  }
+  for (const fieldName of ["topics", "people", "sources", "projects", "tags", "source_refs"]) {
+    const field = saveForm.querySelector(`[name="${fieldName}"]`);
+    const currentValues = splitCsv(formData.get(fieldName));
+    const inferredValues = Array.isArray(inferred[fieldName]) ? inferred[fieldName] : [];
+    field.value = uniqueMerge(currentValues, inferredValues).join(", ");
+  }
+}
+
+async function saveDraft(formData, metadataReviewed) {
+  const payload = {
+    title: formData.get("title"),
+    note_kind: formData.get("note_kind") || null,
+    topics: splitCsv(formData.get("topics")),
+    people: splitCsv(formData.get("people")),
+    sources: splitCsv(formData.get("sources")),
+    projects: splitCsv(formData.get("projects")),
+    tags: splitCsv(formData.get("tags")),
+    source_refs: splitCsv(formData.get("source_refs")),
+    content: latestOutput,
+    ai_assisted: true,
+    metadata_reviewed: metadataReviewed
+  };
+  const response = await fetch("/api/notes/save-draft", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  return { ok: response.ok, data: await response.json() };
+}
+
 aiForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(aiForm);
@@ -114,29 +193,26 @@ aiForm?.addEventListener("submit", async (event) => {
 saveForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(saveForm);
-    const payload = {
-        title: formData.get("title"),
-        note_kind: formData.get("note_kind"),
-        topics: (formData.get("topics") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        people: (formData.get("people") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        sources: (formData.get("sources") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        projects: (formData.get("projects") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        tags: (formData.get("tags") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        source_refs: (formData.get("source_refs") || "").split(",").map((x) => x.trim()).filter(Boolean),
-        content: latestOutput,
-        ai_assisted: true
-    };
-  const response = await fetch("/api/notes/save-draft", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    output.textContent = data.detail || "Saving failed.";
+  const metadataSignature = buildMetadataSignature(formData);
+  if (aiEnabled && metadataSignature !== lastAiMetadataSignature) {
+    const inferredResponse = await inferMetadata(formData);
+    if (!inferredResponse.ok) {
+      saveDraftFeedback.textContent = `${inferredResponse.data.detail || "Could not infer metadata."} Saving with the fields currently entered is still available.`;
+    } else if (!inferredResponse.data.ai_enabled) {
+      saveDraftFeedback.textContent = "AI metadata inference is unavailable. Saving with current fields is still available.";
+    } else {
+      applyInferredMetadata(formData, inferredResponse.data);
+      lastAiMetadataSignature = metadataSignature;
+      saveDraftFeedback.textContent = "AI suggested note attributes. Review or edit them, then click Save Draft again.";
+      return;
+    }
+  }
+  const saveResponse = await saveDraft(formData, aiEnabled && metadataSignature === lastAiMetadataSignature);
+  if (!saveResponse.ok) {
+    output.textContent = saveResponse.data.detail || "Saving failed.";
     return;
   }
-  window.location.href = `/notes/${data.slug}`;
+  window.location.href = `/notes/${saveResponse.data.slug}`;
 });
 </script>
 {% endblock %}

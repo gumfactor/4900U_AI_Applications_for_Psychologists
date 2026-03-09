@@ -25,9 +25,11 @@ def test_notes_and_stats_routes() -> None:
     client = build_test_client()
     notes_page = client.get("/")
     stats_page = client.get("/stats")
+    row_notes_page = client.get("/notes?view=row")
     notes = client.get("/api/notes")
     assert notes_page.status_code == 200
     assert stats_page.status_code == 200
+    assert row_notes_page.status_code == 200
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
 

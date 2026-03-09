@@ -2,9 +2,11 @@
 {% block content %}
 <section class="page-header">
     <div><p class="eyebrow">Note Browser</p><h2>Notes</h2></div>
-    <div class="status-card compact-card">
-        <strong>Create Notes</strong>
-        <p>Use the <code>New Note</code> button to open the slideout editor.</p>
+    <div class="page-header-actions compact-actions">
+        <div class="view-toggle" role="group" aria-label="Toggle note layout">
+            <a href="/notes?note_kind={{ active_filters.note_kind | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
+            <a href="/notes?note_kind={{ active_filters.note_kind | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=row" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
+        </div>
     </div>
 </section>
 <section class="panel filter-panel">
@@ -67,15 +69,16 @@
                 {% endfor %}
             </datalist>
         </label>
+        <input name="view" type="hidden" value="{{ view_mode }}">
         <div class="filter-actions">
             <button type="submit">Filter Notes</button>
             <a href="/notes" class="ghost-link">Clear</a>
         </div>
     </form>
 </section>
-<section class="grid two-up">
+<section class="{% if view_mode == 'row' %}notes-list{% else %}grid two-up{% endif %}">
     {% for note in notes %}
-    <article class="panel">
+    <article class="panel note-card{% if view_mode == 'row' %} note-card-row{% endif %}">
         <div class="panel-head">
             <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
             {% if note.metadata.note_kind %}<span class="pill">{{ note.metadata.note_kind }}</span>{% endif %}

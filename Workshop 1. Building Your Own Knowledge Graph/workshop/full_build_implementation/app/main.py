@@ -47,6 +47,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
+        view: str | None = None,
     ) -> HTMLResponse:
         return _render_notes_page(
             request=request,
@@ -59,6 +60,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             person=person,
             source=source,
             project=project,
+            view=view,
         )
 
     @app.get("/stats", response_class=HTMLResponse)
@@ -85,6 +87,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
+        view: str | None = None,
     ) -> HTMLResponse:
         return _render_notes_page(
             request=request,
@@ -97,6 +100,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             person=person,
             source=source,
             project=project,
+            view=view,
         )
 
     @app.get("/notes/{slug}", response_class=HTMLResponse)
@@ -261,7 +265,9 @@ def _render_notes_page(
     person: str | None = None,
     source: str | None = None,
     project: str | None = None,
+    view: str | None = None,
 ) -> HTMLResponse:
+    view_mode = view if view in {"grid", "row"} else "grid"
     notes = note_repository.list_notes()
     if note_kind:
         notes = [note for note in notes if note.metadata.note_kind == note_kind]
@@ -284,6 +290,7 @@ def _render_notes_page(
             "all_notes": unique_notes,
             "ai_enabled": settings.ai_enabled,
             "title": "Notes",
+            "view_mode": view_mode,
             "active_filters": {
                 "note_kind": note_kind or "",
                 "topic": topic or "",
@@ -291,6 +298,7 @@ def _render_notes_page(
                 "person": person or "",
                 "source": source or "",
                 "project": project or "",
+                "view": view_mode,
             },
         },
     )

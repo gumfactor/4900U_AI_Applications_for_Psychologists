@@ -64,14 +64,75 @@
 <section class="{% if view_mode == 'row' %}notes-list{% else %}grid two-up{% endif %}">
     {% for note in notes %}
     <article class="panel note-card{% if view_mode == 'row' %} note-card-row{% endif %}">
-        <div class="panel-head">
-            <h3><a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a></h3>
-        </div>
         {% set topics = note.metadata.topics | sort %}
         {% set tags = note.metadata.tags | sort %}
         {% set people = note.metadata.people | sort %}
         {% set sources = note.metadata.sources | sort %}
         {% set projects = note.metadata.projects | sort %}
+        {% if view_mode == 'row' %}
+        <div class="panel-head note-row-header">
+            <h3><a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a></h3>
+            {% if topics or tags or people or sources or projects %}
+            <details class="attribute-details note-row-attributes">
+                <summary>Show Attributes</summary>
+                <div class="attribute-groups">
+                    {% if topics %}
+                    <div class="attribute-group">
+                        <span class="attribute-label">Topics</span>
+                        <div class="attribute-chip-group">
+                            {% for topic in topics %}<a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip topic">{{ topic }}</a>{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if tags %}
+                    <div class="attribute-group">
+                        <span class="attribute-label">Tags</span>
+                        <div class="attribute-chip-group">
+                            {% for tag in tags %}<a href="{{ build_explore_href('tag', tag) }}" class="attribute-chip tag">{{ tag }}</a>{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if people %}
+                    <div class="attribute-group">
+                        <span class="attribute-label">People</span>
+                        <div class="attribute-chip-group">
+                            {% for person in people %}<a href="{{ build_explore_href('person', person) }}" class="attribute-chip person">{{ person }}</a>{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if sources %}
+                    <div class="attribute-group">
+                        <span class="attribute-label">Sources</span>
+                        <div class="attribute-chip-group">
+                            {% for source in sources %}<a href="{{ build_explore_href('source', source) }}" class="attribute-chip source">{{ source }}</a>{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if projects %}
+                    <div class="attribute-group">
+                        <span class="attribute-label">Projects</span>
+                        <div class="attribute-chip-group">
+                            {% for project in projects %}<a href="{{ build_explore_href('project', project) }}" class="attribute-chip project">{{ project }}</a>{% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </details>
+            {% endif %}
+        </div>
+        <div class="note-card-row-main">
+            <div class="note-preview-block">
+                <p class="note-preview">{{ build_note_preview(note.summary) }}</p>
+            </div>
+        </div>
+        <div class="meta-row note-row-meta">
+            <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link note-preview-link">Continue reading</a>
+            <span>Updated: {{ note.metadata.updated }}</span>
+        </div>
+        {% else %}
+        <div class="panel-head">
+            <h3><a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a></h3>
+        </div>
         {% if topics or tags or people or sources or projects %}
         <details class="attribute-details">
             <summary>Show Attributes</summary>
@@ -126,6 +187,7 @@
         <div class="meta-row">
             <span>Updated: {{ note.metadata.updated }}</span>
         </div>
+        {% endif %}
     </article>
     {% endfor %}
 </section>

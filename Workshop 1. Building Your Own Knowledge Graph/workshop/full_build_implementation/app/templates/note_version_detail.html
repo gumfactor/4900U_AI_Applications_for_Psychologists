@@ -2,19 +2,31 @@
 {% block content %}
 <section class="page-header">
     <div>
-        <p class="detail-breadcrumb"><a href="{{ return_to }}"><span aria-hidden="true">&larr;</span> Back to notes</a></p>
-        <h2>{{ note.metadata.title }}</h2>
+        <p class="detail-breadcrumb"><a href="{{ return_to }}"><span aria-hidden="true">&larr;</span> Back to note</a></p>
+        <h2>{{ version.title }}</h2>
         <div class="note-title-meta">
-            <span>Updated {{ note.metadata.updated }}</span>
-            <span>Created {{ note.metadata.created }}</span>
+            <span>Captured {{ version.timestamp }}</span>
+            <span>{{ version.action | replace('-', ' ') | title }}</span>
         </div>
     </div>
     <div class="page-header-actions">
-        <a href="/notes/{{ note.slug }}/edit?return_to={{ return_to | urlencode }}" class="ghost-link">Edit Note</a>
+        {% if previous_version %}
+        <a href="/notes/{{ note.slug }}/history/{{ previous_version.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link">Older Version</a>
+        {% endif %}
+        {% if next_version %}
+        <a href="/notes/{{ note.slug }}/history/{{ next_version.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link">Newer Version</a>
+        {% endif %}
     </div>
 </section>
 <section class="note-detail-layout">
     <div class="note-main-column">
+        <article class="panel note-content-panel">
+            <h3>Change Summary</h3>
+            <ul class="section-list">
+                {% for item in change_summary %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+        </article>
+
         <article class="panel note-content-panel">
             <h3>Summary</h3>
             {% if draft_state.summary_is_placeholder %}
@@ -58,27 +70,14 @@
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="draft-callout">Linked notes have not been added yet.</p>
+            <p class="draft-callout">Linked notes were not included in this version.</p>
             {% endif %}
         </article>
     </div>
 
     <aside class="note-sidebar">
         <article class="panel">
-            <h3>Related Notes</h3>
-            {% if related_notes %}
-            <ul class="link-list">
-                {% for related_note in related_notes %}
-                <li><a href="/notes/{{ related_note.slug }}?return_to={{ return_to | urlencode }}">{{ related_note.metadata.title }}</a></li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="muted-text">No related notes found from shared metadata yet.</p>
-            {% endif %}
-        </article>
-
-        <article class="panel">
-            <h3>Connections</h3>
+            <h3>Snapshot Metadata</h3>
             <div class="sidebar-section">
                 <span class="attribute-label">Topics</span>
                 <div class="attribute-chip-group">
@@ -107,45 +106,6 @@
                     {% if not note.metadata.sources %}<span class="muted-text">n/a</span>{% endif %}
                 </div>
             </div>
-            <div class="sidebar-section">
-                <span class="attribute-label">Projects</span>
-                <div class="attribute-chip-group">
-                    {% for project in note.metadata.projects %}<a href="{{ build_explore_href('project', project) }}" class="attribute-chip project">{{ project }}</a>{% endfor %}
-                    {% if not note.metadata.projects %}<span class="muted-text">n/a</span>{% endif %}
-                </div>
-            </div>
-        </article>
-
-        <article class="panel">
-            <h3>Version History</h3>
-            {% if version_history %}
-            <ul class="activity-list">
-                {% for entry in version_history %}
-                <li class="activity-item">
-                    <div>
-                        <strong>{{ entry.title }}</strong>
-                        {% if entry.details %}<p class="muted-text">{{ entry.details }}</p>{% endif %}
-                    </div>
-                    <div class="activity-meta">
-                        <span>{{ entry.timestamp }}</span>
-                        {% if entry.href %}<a href="{{ entry.href }}?return_to={{ return_to | urlencode }}">View version</a>{% endif %}
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="muted-text">No versions recorded yet.</p>
-            {% endif %}
-        </article>
-
-        <article class="panel">
-            <details class="attribute-details">
-                <summary>Show Metadata</summary>
-                <ul class="clean-list">
-                    <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
-                    <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
-                </ul>
-            </details>
         </article>
     </aside>
 </section>

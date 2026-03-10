@@ -28,6 +28,7 @@ class Settings:
     sources_dir: Path
     prompts_dir: Path
     logs_dir: Path
+    history_dir: Path
     templates_dir: Path
     static_dir: Path
     gemini_api_key: str
@@ -52,6 +53,7 @@ def get_settings(base_dir: Path | None = None) -> Settings:
         sources_dir=data_dir / "sources",
         prompts_dir=data_dir / "prompts",
         logs_dir=data_dir / "logs",
+        history_dir=data_dir / "history",
         templates_dir=resolved_base_dir / "app" / "templates",
         static_dir=resolved_base_dir / "app" / "static",
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),

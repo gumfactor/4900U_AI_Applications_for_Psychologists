@@ -87,6 +87,25 @@ class AiLogEntry(BaseModel):
     raw_content: str = ""
 
 
+class ActivityEntry(BaseModel):
+    timestamp: str
+    sort_timestamp: str
+    title: str
+    details: str = ""
+    href: str | None = None
+
+
+class NoteVersion(BaseModel):
+    slug: str
+    note_slug: str
+    timestamp: str
+    action: str
+    title: str
+    path: str
+    raw_markdown: str
+    note: Note
+
+
 class SaveDraftRequest(BaseModel):
     title: str
     topics: list[str] = Field(default_factory=list)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 import re
 from urllib.parse import quote, unquote
@@ -13,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from app.config import Settings, get_settings
 from app.models import (
     AiTaskRequest,
+    ActivityEntry,
     DashboardSummary,
     InferMetadataRequest,
     InferMetadataResponse,
@@ -22,6 +24,7 @@ from app.models import (
 from app.services.ai_service import AiService
 from app.services.gemini_client import GeminiClient
 from app.services.log_service import LogService
+from app.services.note_history_service import NoteHistoryService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
 from app.services.source_repository import SourceRepository
@@ -33,6 +36,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     source_repository = SourceRepository(settings.sources_dir)
     prompt_repository = PromptRepository(settings.prompts_dir)
     log_service = LogService(settings.logs_dir)
+    note_history_service = NoteHistoryService(settings.history_dir, settings.notes_dir)
     ai_service = AiService(
         note_repository=note_repository,
         source_repository=source_repository,
@@ -118,19 +122,48 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             note = note_repository.get_note(slug)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-        related_logs = _logs_for_note(log_service.list_logs(), note.path)
+        version_history = _build_version_history(note_history_service.ensure_history(note), slug)
         related_notes = _related_notes_for(note_repository.list_notes(), note)
         return templates.TemplateResponse(
             request,
             "note_detail.html",
             {
                 "note": note,
-                "related_logs": related_logs,
+                "version_history": version_history,
                 "related_notes": related_notes,
                 "return_to": _safe_return_to(return_to),
                 "draft_state": _build_draft_state(note),
                 "ai_enabled": settings.ai_enabled,
                 "title": note.metadata.title,
+                "build_explore_href": _build_explore_href,
+            },
+        )
+
+    @app.get("/notes/{slug}/history/{version_slug}", response_class=HTMLResponse)
+    def note_version_detail(request: Request, slug: str, version_slug: str, return_to: str | None = None) -> HTMLResponse:
+        try:
+            versions = note_history_service.ensure_history(note_repository.get_note(slug))
+            version = note_history_service.get_version(slug, version_slug)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        version_index = next((index for index, candidate in enumerate(versions) if candidate.slug == version_slug), None)
+        if version_index is None:
+            raise HTTPException(status_code=404, detail=f"Version not found: {version_slug}")
+        previous_version = versions[version_index - 1] if version_index > 0 else None
+        next_version = versions[version_index + 1] if version_index + 1 < len(versions) else None
+        return templates.TemplateResponse(
+            request,
+            "note_version_detail.html",
+            {
+                "note": version.note,
+                "version": version,
+                "change_summary": _summarize_version_change(previous_version, version),
+                "previous_version": previous_version,
+                "next_version": next_version,
+                "return_to": _safe_return_to(return_to) if return_to else f"/notes/{slug}",
+                "draft_state": _build_draft_state(version.note),
+                "ai_enabled": settings.ai_enabled,
+                "title": f"{version.title} history",
                 "build_explore_href": _build_explore_href,
             },
         )
@@ -340,6 +373,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             tags=tags,
             content=request_body.content,
         )
+        note_history_service.record_version(note, action="created")
         if inferred_metadata and used_ai_metadata:
             log_service.write_log(
                 task="metadata_extraction",
@@ -364,6 +398,9 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     @app.put("/api/notes/{slug}")
     def update_note(slug: str, request_body: UpdateNoteRequest) -> dict:
         try:
+            existing_note = note_repository.get_note(slug)
+            if not note_history_service.list_versions(slug):
+                note_history_service.record_version(existing_note, action="imported")
             note = note_repository.update_note(
                 slug=slug,
                 title=request_body.title,
@@ -377,6 +414,8 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             )
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        if _notes_differ(existing_note, note):
+            note_history_service.record_version(note, action="updated")
         log_service.write_log(
             task="update_note",
             prompt_slug="manual-edit",
@@ -492,6 +531,7 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
     return merged
 
 
+
 def _build_note_preview(text: str) -> str:
     cleaned = " ".join((text or "").split())
     if not cleaned:
@@ -563,8 +603,104 @@ def _build_explore_href(kind: str, value: str) -> str:
     return f"/explore?kind={quote(kind)}&value={quote(value)}"
 
 
-def _logs_for_note(logs: list, note_path: str) -> list:
-    return [log for log in logs if log.output_target == note_path or note_path in log.input_files]
+def _build_version_history(versions: list, note_slug: str) -> list[ActivityEntry]:
+    if not versions:
+        return []
+    entries: list[ActivityEntry] = []
+    for index in range(len(versions) - 1, -1, -1):
+        current = versions[index]
+        previous = versions[index - 1] if index > 0 else None
+        version_number = index + 1
+        details = "; ".join(_summarize_version_change(previous, current))
+        entries.append(
+            ActivityEntry(
+                timestamp=_format_activity_timestamp(current.timestamp),
+                sort_timestamp=_normalize_activity_timestamp(current.timestamp),
+                title=f"Version {version_number}",
+                details=details,
+                href=f"/notes/{note_slug}/history/{current.slug}",
+            )
+        )
+    return entries
+
+
+def _normalize_activity_timestamp(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC).isoformat()
+
+
+def _format_activity_timestamp(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        return parsed.strftime("%b %d, %Y")
+    return parsed.astimezone().strftime("%b %d, %Y, %I:%M %p")
+
+
+def _summarize_version_change(previous_version, current_version) -> list[str]:
+    if previous_version is None:
+        return ["Initial version captured."]
+    previous_note = previous_version.note
+    current_note = current_version.note
+    changes: list[str] = []
+    if previous_note.metadata.title != current_note.metadata.title:
+        changes.append(f"Retitled to {current_note.metadata.title}.")
+    for label, attribute_name in (
+        ("topics", "topics"),
+        ("tags", "tags"),
+        ("people", "people"),
+        ("sources", "sources"),
+        ("projects", "projects"),
+    ):
+        attribute_change = _summarize_list_change(
+            getattr(previous_note.metadata, attribute_name),
+            getattr(current_note.metadata, attribute_name),
+            label,
+        )
+        if attribute_change:
+            changes.append(attribute_change)
+    if previous_note.summary.strip() != current_note.summary.strip():
+        changes.append("Summary changed.")
+    for label, attribute_name in (("key points", "key_points"), ("evidence", "evidence"), ("linked notes", "links")):
+        if getattr(previous_note, attribute_name) != getattr(current_note, attribute_name):
+            changes.append(f"{label.capitalize()} changed.")
+    if previous_note.raw_body.strip() != current_note.raw_body.strip() and "Summary changed." not in changes:
+        changes.append("Body content changed.")
+    return changes[:3] or ["Minor content cleanup."]
+
+
+def _summarize_list_change(previous_items: list[str], current_items: list[str], label: str) -> str:
+    previous_set = set(previous_items)
+    current_set = set(current_items)
+    if previous_set == current_set:
+        return ""
+    added = sorted(current_set - previous_set)
+    removed = sorted(previous_set - current_set)
+    fragments: list[str] = []
+    if added:
+        fragments.append(f"added {', '.join(added[:2])}")
+    if removed:
+        fragments.append(f"removed {', '.join(removed[:2])}")
+    if not fragments:
+        return f"{label.capitalize()} reordered."
+    return f"{label.capitalize()} {'; '.join(fragments)}."
+
+
+def _notes_differ(previous_note, current_note) -> bool:
+    if previous_note.raw_body != current_note.raw_body:
+        return True
+    return previous_note.metadata.model_dump() != current_note.metadata.model_dump()
 
 
 def _safe_return_to(return_to: str | None) -> str:

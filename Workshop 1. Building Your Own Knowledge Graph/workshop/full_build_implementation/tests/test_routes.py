@@ -1,6 +1,7 @@
 from pathlib import Path
 from shutil import copytree
 from shutil import rmtree
+import re
 
 from fastapi.testclient import TestClient
 
@@ -121,13 +122,43 @@ def test_explore_route() -> None:
     assert "Workshop Instructor" in response.text
 
 
-def test_note_detail_shows_provenance() -> None:
+def test_note_detail_shows_version_history() -> None:
     client = build_test_client()
     response = client.get("/notes/concept-personal-knowledge-base")
     assert response.status_code == 200
     assert "Version History" in response.text
-    assert "Related AI logs" in response.text
+    assert "Version 1" in response.text
     assert "Connections" in response.text
+
+
+def test_note_version_detail_shows_change_summary() -> None:
+    client = build_test_client()
+    update_response = client.put(
+        "/api/notes/concept-personal-knowledge-base",
+        json={
+            "title": "Edited PKB Note",
+            "topics": ["Edited Topic"],
+            "people": ["Workshop Instructor"],
+            "sources": ["PKB Design Principles"],
+            "projects": ["Instructor Demo System"],
+            "source_refs": ["data/sources/source-pkb-design-principles.md"],
+            "tags": ["edited"],
+            "content": "## Summary\n\nUpdated summary.\n\n## Key Points\n\n- Revised point\n\n## Linked Notes\n\n- `related_to`: [AI Provenance Logging](./concept-ai-provenance-logging.md)\n\n## Evidence / Sources\n\n- Updated evidence\n\n## Open Questions\n\n- Updated question",
+        },
+    )
+    assert update_response.status_code == 200
+    detail_response = client.get("/notes/concept-personal-knowledge-base")
+    assert detail_response.status_code == 200
+    assert "View version" in detail_response.text
+    match = re.search(r'href="(/notes/concept-personal-knowledge-base/history/[^"]+)"[^>]*>View version</a>', detail_response.text)
+    assert match is not None
+    version_response = client.get(match.group(1))
+    assert version_response.status_code == 200
+    assert "Change Summary" in version_response.text
+    assert any(
+        phrase in version_response.text
+        for phrase in ("Retitled to Edited PKB Note.", "Summary changed.", "Topics added Edited Topic.")
+    )
 
 
 def test_note_detail_preserves_navigation_context() -> None:

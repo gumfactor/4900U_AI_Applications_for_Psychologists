@@ -9,3 +9,4 @@ _test_runtime/
 .pytest-tmp/
 pytest-cache-files-*/
 tmp*/
+data/

@@ -28,9 +28,9 @@
         </article>
 
         <article class="panel note-content-panel">
-            <h3>Summary</h3>
+            <h3>Note</h3>
             {% if draft_state.summary_is_placeholder %}
-            <p class="draft-callout">Summary is still in draft form and needs review.</p>
+            <p class="draft-callout">Note content is still in draft form and needs review.</p>
             {% else %}
             <div class="note-prose">
                 {% for paragraph in note.summary.split('\n\n') if paragraph.strip() %}

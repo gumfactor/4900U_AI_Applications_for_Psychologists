@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 from app.models import Note
 from app.services.markdown_utils import (
@@ -103,10 +104,14 @@ class NoteRepository:
             slug=path.stem,
             path=str(path.relative_to(self.notes_dir.parent.parent).as_posix()),
             raw_body=body,
-            summary=sections.get("Summary", ""),
+            summary=sections.get("Summary", "") or self._plain_note_body(body),
             key_points=bullet_lines(sections.get("Key Points", "")),
             evidence=bullet_lines(sections.get("Evidence / Sources", "")),
             open_questions=bullet_lines(sections.get("Open Questions", "")),
             linked_notes_markdown=linked_notes_markdown,
             links=extract_links(linked_notes_markdown),
         )
+
+    @staticmethod
+    def _plain_note_body(body: str) -> str:
+        return re.sub(r"^# .+\n+", "", body.strip(), count=1).strip()

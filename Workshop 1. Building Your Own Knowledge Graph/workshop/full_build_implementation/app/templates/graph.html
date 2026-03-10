@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Workspace Graph</p>
+        <h2>Graph View</h2>
+        <p class="muted-text">Browse authored note links by default, then layer in shared metadata connections when needed.</p>
+    </div>
+    <div class="graph-stats">
+        <article class="status-card compact-card">
+            <strong>Notes</strong>
+            <p>{{ graph.stats.total_nodes }}</p>
+        </article>
+        <article class="status-card compact-card">
+            <strong>Explicit Edges</strong>
+            <p>{{ graph.stats.explicit_edges }}</p>
+        </article>
+        <article class="status-card compact-card">
+            <strong>Metadata Edge Types</strong>
+            <p>{{ graph.stats.metadata_edges_by_type | length }}</p>
+        </article>
+    </div>
+</section>
+
+<section class="graph-layout">
+    <aside class="panel graph-sidebar">
+        <div class="graph-filter-block">
+            <label for="graph-search">Search / Focus Note</label>
+            <input id="graph-search" type="search" placeholder="Search note title">
+        </div>
+
+        <div class="graph-filter-block">
+            <h3>Node Types</h3>
+            <div class="graph-toggle-list">
+                {% for note_type in note_type_options %}
+                <label class="graph-toggle">
+                    <input type="checkbox" name="note-type" value="{{ note_type }}" checked>
+                    <span>{{ note_type }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="graph-filter-block">
+            <h3>Explicit Relationships</h3>
+            <div class="graph-toggle-list">
+                {% for relationship in explicit_relationship_options %}
+                <label class="graph-toggle">
+                    <input type="checkbox" name="explicit-edge" value="{{ relationship }}" checked>
+                    <span>{{ relationship }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="graph-filter-block">
+            <div class="panel-head">
+                <h3>Metadata Edges</h3>
+                <span class="muted-text">Hidden by default</span>
+            </div>
+            <div class="graph-toggle-list">
+                {% for relationship in metadata_edge_options %}
+                <label class="graph-toggle">
+                    <input type="checkbox" name="metadata-edge" value="{{ relationship }}">
+                    <span>{{ relationship }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="graph-filter-block">
+            <h3>Legend</h3>
+            <ul class="graph-legend">
+                <li><span class="legend-swatch explicit-edge"></span> Authored link</li>
+                <li><span class="legend-swatch metadata-edge"></span> Shared metadata</li>
+                <li><span class="legend-dot concept-node"></span> Concept</li>
+                <li><span class="legend-dot source-node"></span> Source</li>
+                <li><span class="legend-dot person-node"></span> Person</li>
+                <li><span class="legend-dot project-node"></span> Project</li>
+                <li><span class="legend-dot note-node"></span> Note</li>
+            </ul>
+        </div>
+    </aside>
+
+    <section class="graph-main">
+        <article class="panel graph-canvas-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Interactive Graph</p>
+                    <h3>Note Relationships</h3>
+                </div>
+                <p id="graph-summary" class="muted-text">Loading graph data...</p>
+            </div>
+            <div id="graph-canvas" class="graph-canvas" data-graph-endpoint="/api/graph"></div>
+            <p id="graph-library-warning" class="draft-callout hidden">
+                The graph library did not load. Check your network connection and reload the page.
+            </p>
+        </article>
+
+        <article class="panel graph-detail-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Selection</p>
+                    <h3>Graph Details</h3>
+                </div>
+            </div>
+            <div id="graph-detail-empty" class="muted-text">
+                Select a node or edge to inspect it.
+            </div>
+            <div id="graph-node-detail" class="graph-detail hidden"></div>
+            <div id="graph-edge-detail" class="graph-detail hidden"></div>
+        </article>
+    </section>
+</section>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="/static/graph.js"></script>
+{% endblock %}

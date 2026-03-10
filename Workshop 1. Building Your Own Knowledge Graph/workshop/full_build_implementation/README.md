@@ -6,6 +6,7 @@ This is the instructor-facing reference implementation for the workshop. It exte
 
 - `Notes` is the default landing page.
 - The `Notes` banner shows the current note count and filtered result count.
+- `Graph` provides a workspace-level relationship view over authored note links, with optional metadata-derived edges.
 - New notes can be created from the slideout editor.
 - When Gemini is available, new-note metadata is inferred from the title and body before final save.
 - Existing notes can be edited in-app.
@@ -32,5 +33,6 @@ If no Gemini key is configured, the app runs in browse-only mode and disables AI
 2. Show AI-assisted attribute suggestion on save.
 3. Open the resulting note and inspect the generated structure and metadata.
 4. Edit the note in-app.
-5. Click a tag, person, source, or project to move into the connected exploration view.
-6. Use `Multi Note Queries` for cross-note Q&A.
+5. Open `Graph` to show explicit note links, then toggle metadata edges on.
+6. Click a tag, person, source, or project to move into the connected exploration view.
+7. Use `Multi Note Queries` for cross-note Q&A.

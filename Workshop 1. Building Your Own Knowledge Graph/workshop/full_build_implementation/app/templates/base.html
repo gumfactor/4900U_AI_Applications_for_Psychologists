@@ -63,6 +63,7 @@
             <nav>
                 <a href="/notes">Notes</a>
                 <a href="/ai">Multi Note Queries</a>
+                <a href="/graph">Graph</a>
                 <button id="open-note-panel" class="nav-button" type="button">New Note</button>
             </nav>
         </div>
@@ -143,5 +144,6 @@
         window.location.href = `/notes/${saveResponse.data.slug}`;
     });
     </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

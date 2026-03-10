@@ -60,23 +60,35 @@ def build_test_client() -> TestClient:
 def test_notes_page_shows_note_count_and_filters() -> None:
     client = build_test_client()
     notes_page = client.get("/")
+    graph_page = client.get("/graph")
+    graph_api = client.get("/api/graph")
     row_notes_page = client.get("/notes?view=row")
     searched_notes_page = client.get("/notes?q=provenance")
     dated_notes_page = client.get("/notes?created_since=2026-03-09")
     notes = client.get("/api/notes")
     assert notes_page.status_code == 200
+    assert graph_page.status_code == 200
+    assert graph_api.status_code == 200
     assert row_notes_page.status_code == 200
     assert searched_notes_page.status_code == 200
     assert dated_notes_page.status_code == 200
-    assert "total notes" in notes_page.text
-    assert "matching notes out of" in searched_notes_page.text
+    assert 'class="page-header-count">10<' in notes_page.text
+    assert ">notes<" in notes_page.text
+    assert "Graph View" in graph_page.text
+    assert "Hidden by default" in graph_page.text
+    assert "/api/graph" in graph_page.text
+    assert ">showing<" in searched_notes_page.text
+    assert ">10 total<" in searched_notes_page.text
     assert "AI Provenance Logging" in searched_notes_page.text
     assert '/notes/note-neuroimaging-in-psychopathy?return_to=/notes%3Fcreated_since%3D2026-03-09' in dated_notes_page.text
     assert '/notes/concept-ai-provenance-logging?return_to=/notes%3Fcreated_since%3D2026-03-09' not in dated_notes_page.text
-    assert notes_page.text.count('<option value="Workshop Instructor"></option>') == 1
+    assert notes_page.text.count(">Workshop Instructor</option>") == 1
     assert "note-attachment-indicator" in notes_page.text
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
+    assert len(graph_api.json()["nodes"]) == len(notes.json())
+    assert any(edge["family"] == "explicit" for edge in graph_api.json()["edges"])
+    assert "shared_topic" in graph_api.json()["stats"]["metadata_edges_by_type"]
     assert client.get("/stats").status_code == 404
 
 
@@ -374,5 +386,9 @@ def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> N
     assert detail_response.status_code == 200
     assert "Key Points" in detail_response.text
     assert "Point one" in detail_response.text
-    assert "Evidence / Sources" in detail_response.text
+    main_column_match = re.search(r'<div class="note-main-column">(.*?)</div>\s*<aside class="note-sidebar">', detail_response.text, re.S)
+    assert main_column_match is not None
+    main_column = main_column_match.group(1)
+    assert main_column.index("<h3>Key Points</h3>") < main_column.index("<h3>Attachments</h3>")
+    assert "Evidence / Sources" not in detail_response.text
     assert "Needs manual editing" not in detail_response.text

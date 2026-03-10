@@ -16,6 +16,7 @@ from app.models import (
     AiTaskRequest,
     ActivityEntry,
     DashboardSummary,
+    GraphResponse,
     InferMetadataRequest,
     InferMetadataResponse,
     SaveDraftRequest,
@@ -24,6 +25,7 @@ from app.models import (
 from app.services.ai_service import AiService
 from app.services.attachment_service import AttachmentService
 from app.services.gemini_client import GeminiClient
+from app.services.graph_service import GraphService
 from app.services.note_history_service import NoteHistoryService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
@@ -35,6 +37,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     note_repository = NoteRepository(settings.notes_dir)
     prompt_repository = PromptRepository(settings.prompts_dir)
     attachment_service = AttachmentService(settings.attachments_dir)
+    graph_service = GraphService()
     note_history_service = NoteHistoryService(settings.history_dir, settings.notes_dir)
     ai_service = AiService(
         note_repository=note_repository,
@@ -193,6 +196,23 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             },
         )
 
+    @app.get("/graph", response_class=HTMLResponse)
+    def graph_page(request: Request) -> HTMLResponse:
+        notes = note_repository.list_notes()
+        graph = graph_service.build_graph(notes)
+        return templates.TemplateResponse(
+            request,
+            "graph.html",
+            {
+                "graph": graph,
+                "note_type_options": _collect_note_type_options(graph),
+                "explicit_relationship_options": _collect_explicit_relationship_options(graph),
+                "metadata_edge_options": _collect_metadata_edge_options(graph),
+                "ai_enabled": settings.ai_enabled,
+                "title": "Graph",
+            },
+        )
+
     @app.get("/ai", response_class=HTMLResponse)
     def ai_page(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
@@ -221,6 +241,10 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             return note_repository.get_note(slug).model_dump()
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.get("/api/graph")
+    def graph_api() -> GraphResponse:
+        return graph_service.build_graph(note_repository.list_notes())
 
     @app.post("/api/ai/run")
     def run_ai_task(task_request: AiTaskRequest) -> dict:
@@ -485,6 +509,18 @@ def _build_filter_options(notes: list) -> dict[str, list[str]]:
         "sources": sources,
         "projects": projects,
     }
+
+
+def _collect_note_type_options(graph: GraphResponse) -> list[str]:
+    return sorted({node.note_type for node in graph.nodes}, key=str.casefold)
+
+
+def _collect_explicit_relationship_options(graph: GraphResponse) -> list[str]:
+    return sorted({edge.label for edge in graph.edges if edge.family == "explicit"}, key=str.casefold)
+
+
+def _collect_metadata_edge_options(graph: GraphResponse) -> list[str]:
+    return sorted({edge.label for edge in graph.edges if edge.family == "metadata"}, key=str.casefold)
 
 
 def _collect_sorted_values(notes: list, attribute_name: str) -> list[str]:

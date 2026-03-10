@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 
 RelationshipType = Literal["related_to", "supports", "contradicts", "applies_to", "mentions"]
 AiTaskType = Literal["question_answering"]
+GraphEdgeFamily = Literal["explicit", "metadata"]
+NoteType = Literal["concept", "source", "person", "project", "note"]
 
 
 class NoteMetadata(BaseModel):
@@ -144,3 +146,39 @@ class UpdateNoteRequest(BaseModel):
 class DashboardSummary(BaseModel):
     total_notes: int
     ai_enabled: bool
+
+
+class GraphNode(BaseModel):
+    id: str
+    slug: str
+    title: str
+    note_type: NoteType
+    path: str
+    summary_preview: str = ""
+    topics: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    people: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(default_factory=list)
+    projects: list[str] = Field(default_factory=list)
+
+
+class GraphEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    family: GraphEdgeFamily
+    label: str
+    weight: int = 1
+    shared_values: list[str] = Field(default_factory=list)
+
+
+class GraphStats(BaseModel):
+    total_nodes: int
+    explicit_edges: int
+    metadata_edges_by_type: dict[str, int] = Field(default_factory=dict)
+
+
+class GraphResponse(BaseModel):
+    nodes: list[GraphNode] = Field(default_factory=list)
+    edges: list[GraphEdge] = Field(default_factory=list)
+    stats: GraphStats

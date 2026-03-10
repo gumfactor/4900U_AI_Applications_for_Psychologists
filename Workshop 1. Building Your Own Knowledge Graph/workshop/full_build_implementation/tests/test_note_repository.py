@@ -95,6 +95,29 @@ def test_note_repository_updates_existing_note() -> None:
         content="Updated content for the repository test.",
     )
     assert updated.metadata.title == "Updated PKB Note"
+    assert updated.summary == "Updated content for the repository test."
+
+
+def test_note_repository_uses_plain_note_body_as_summary() -> None:
+    source_base_dir = Path(__file__).resolve().parent.parent
+    copied_base_dir = source_base_dir / "_test_runtime" / "repo_plain_copy"
+    rmtree(copied_base_dir, ignore_errors=True)
+    copytree(source_base_dir / "data", copied_base_dir / "data")
+    repository = NoteRepository(copied_base_dir / "data" / "notes")
+    note = repository.update_note(
+        slug="concept-personal-knowledge-base",
+        title="Plain Body Note",
+        topics=["Knowledge Work"],
+        people=["Workshop Instructor"],
+        sources=["PKB Design Principles"],
+        projects=["Instructor Demo System"],
+        source_refs=["data/sources/source-pkb-design-principles.md"],
+        attachments=[],
+        tags=["plain-body"],
+        content="This is the actual note body.\n\nIt has two paragraphs.",
+    )
+    assert note.summary == "This is the actual note body.\n\nIt has two paragraphs."
+    assert note.raw_body.startswith("# Plain Body Note")
 
 
 def test_note_repository_deletes_existing_note() -> None:

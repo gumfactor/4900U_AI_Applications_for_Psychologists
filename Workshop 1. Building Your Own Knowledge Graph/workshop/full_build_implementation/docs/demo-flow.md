@@ -8,5 +8,6 @@
    - version history
    - related notes
 5. Open the note editor and make a visible revision.
-6. Click a tag, person, source, project, or topic chip to move into the connected exploration view.
-7. Point out the note count in the `Notes` banner, then open `Multi Note Queries`, select multiple notes, and run `Ask Questions`.
+6. Open `Graph` and show the authored note links first, then turn on metadata edges.
+7. Click a tag, person, source, project, or topic chip to move into the connected exploration view.
+8. Point out the note count in the `Notes` banner, then open `Multi Note Queries`, select multiple notes, and run `Ask Questions`.

@@ -1,7 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-    <div><h2>Note Browser</h2></div>
+    <div class="page-header-copy">
+        <h2>Note Browser</h2>
+        <p class="page-header-summary">Browse, filter, and open notes across your knowledge base.</p>
+        <p class="page-header-meta" aria-label="Note count summary">
+            {% if visible_notes == total_notes %}
+            <span class="page-header-meta-label">Total notes in this knowledge base:</span>
+            <span class="page-header-count">{{ total_notes }}</span>
+            {% else %}
+            <span class="page-header-count">{{ visible_notes }}</span>
+            <span>showing</span>
+            <span class="page-header-meta-separator">of</span>
+            <span>{{ total_notes }} total</span>
+            {% endif %}
+        </p>
+    </div>
     <div class="page-header-actions compact-actions">
         <div class="view-toggle" role="group" aria-label="Toggle note layout">
             <a href="/notes?q={{ active_filters.q | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&created_since={{ active_filters.created_since | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
@@ -15,46 +29,103 @@
             <label class="filter-field filter-field-search">Search
                 <input name="q" type="text" value="{{ active_filters.q }}" placeholder="Search title, summary, or body">
             </label>
-            <label class="filter-field">Topic
-                <input name="topic" type="text" value="{{ active_filters.topic }}" list="topics">
-                <datalist id="topics">
-                    {% for value in filter_options.topics %}
-                    <option value="{{ value }}"></option>
-                    {% endfor %}
-                </datalist>
-            </label>
-            <label class="filter-field">Tag
-                <input name="tag" type="text" value="{{ active_filters.tag }}" list="tags">
-                <datalist id="tags">
-                    {% for value in filter_options.tags %}
-                    <option value="{{ value }}"></option>
-                    {% endfor %}
-                </datalist>
-            </label>
-            <label class="filter-field">Person
-                <input name="person" type="text" value="{{ active_filters.person }}" list="people">
-                <datalist id="people">
-                    {% for value in filter_options.people %}
-                    <option value="{{ value }}"></option>
-                    {% endfor %}
-                </datalist>
-            </label>
-            <label class="filter-field">Source
-                <input name="source" type="text" value="{{ active_filters.source }}" list="sources">
-                <datalist id="sources">
-                    {% for value in filter_options.sources %}
-                    <option value="{{ value }}"></option>
-                    {% endfor %}
-                </datalist>
-            </label>
-            <label class="filter-field">Project
-                <input name="project" type="text" value="{{ active_filters.project }}" list="projects">
-                <datalist id="projects">
-                    {% for value in filter_options.projects %}
-                    <option value="{{ value }}"></option>
-                    {% endfor %}
-                </datalist>
-            </label>
+            <div class="filter-pill-group" aria-label="Metadata filters">
+                <div class="filter-popover" data-filter-control>
+                    <input name="topic" type="hidden" value="{{ active_filters.topic }}" data-filter-input>
+                    <button type="button" class="filter-trigger{% if active_filters.topic %} is-active{% endif %}" data-filter-trigger aria-haspopup="dialog" aria-expanded="false">
+                        <span class="filter-trigger-label">Topic</span>
+                        <span class="filter-trigger-value" data-filter-value>{{ active_filters.topic }}</span>
+                    </button>
+                    <div class="filter-menu" data-filter-menu hidden>
+                        <div class="filter-menu-head">
+                            <strong>Topic</strong>
+                            <button type="button" class="filter-menu-clear" data-filter-clear>Clear</button>
+                        </div>
+                        <div class="filter-option-list">
+                            <button type="button" class="filter-option{% if not active_filters.topic %} is-selected{% endif %}" data-filter-option data-value="">All topics</button>
+                            {% for value in filter_options.topics %}
+                            <button type="button" class="filter-option{% if active_filters.topic == value %} is-selected{% endif %}" data-filter-option data-value="{{ value }}">{{ value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-popover" data-filter-control>
+                    <input name="tag" type="hidden" value="{{ active_filters.tag }}" data-filter-input>
+                    <button type="button" class="filter-trigger{% if active_filters.tag %} is-active{% endif %}" data-filter-trigger aria-haspopup="dialog" aria-expanded="false">
+                        <span class="filter-trigger-label">Tag</span>
+                        <span class="filter-trigger-value" data-filter-value>{{ active_filters.tag }}</span>
+                    </button>
+                    <div class="filter-menu" data-filter-menu hidden>
+                        <div class="filter-menu-head">
+                            <strong>Tag</strong>
+                            <button type="button" class="filter-menu-clear" data-filter-clear>Clear</button>
+                        </div>
+                        <div class="filter-option-list">
+                            <button type="button" class="filter-option{% if not active_filters.tag %} is-selected{% endif %}" data-filter-option data-value="">All tags</button>
+                            {% for value in filter_options.tags %}
+                            <button type="button" class="filter-option{% if active_filters.tag == value %} is-selected{% endif %}" data-filter-option data-value="{{ value }}">{{ value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-popover" data-filter-control>
+                    <input name="person" type="hidden" value="{{ active_filters.person }}" data-filter-input>
+                    <button type="button" class="filter-trigger{% if active_filters.person %} is-active{% endif %}" data-filter-trigger aria-haspopup="dialog" aria-expanded="false">
+                        <span class="filter-trigger-label">Person</span>
+                        <span class="filter-trigger-value" data-filter-value>{{ active_filters.person }}</span>
+                    </button>
+                    <div class="filter-menu" data-filter-menu hidden>
+                        <div class="filter-menu-head">
+                            <strong>Person</strong>
+                            <button type="button" class="filter-menu-clear" data-filter-clear>Clear</button>
+                        </div>
+                        <div class="filter-option-list">
+                            <button type="button" class="filter-option{% if not active_filters.person %} is-selected{% endif %}" data-filter-option data-value="">All people</button>
+                            {% for value in filter_options.people %}
+                            <button type="button" class="filter-option{% if active_filters.person == value %} is-selected{% endif %}" data-filter-option data-value="{{ value }}">{{ value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-popover" data-filter-control>
+                    <input name="source" type="hidden" value="{{ active_filters.source }}" data-filter-input>
+                    <button type="button" class="filter-trigger{% if active_filters.source %} is-active{% endif %}" data-filter-trigger aria-haspopup="dialog" aria-expanded="false">
+                        <span class="filter-trigger-label">Source</span>
+                        <span class="filter-trigger-value" data-filter-value>{{ active_filters.source }}</span>
+                    </button>
+                    <div class="filter-menu" data-filter-menu hidden>
+                        <div class="filter-menu-head">
+                            <strong>Source</strong>
+                            <button type="button" class="filter-menu-clear" data-filter-clear>Clear</button>
+                        </div>
+                        <div class="filter-option-list">
+                            <button type="button" class="filter-option{% if not active_filters.source %} is-selected{% endif %}" data-filter-option data-value="">All sources</button>
+                            {% for value in filter_options.sources %}
+                            <button type="button" class="filter-option{% if active_filters.source == value %} is-selected{% endif %}" data-filter-option data-value="{{ value }}">{{ value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-popover" data-filter-control>
+                    <input name="project" type="hidden" value="{{ active_filters.project }}" data-filter-input>
+                    <button type="button" class="filter-trigger{% if active_filters.project %} is-active{% endif %}" data-filter-trigger aria-haspopup="dialog" aria-expanded="false">
+                        <span class="filter-trigger-label">Project</span>
+                        <span class="filter-trigger-value" data-filter-value>{{ active_filters.project }}</span>
+                    </button>
+                    <div class="filter-menu" data-filter-menu hidden>
+                        <div class="filter-menu-head">
+                            <strong>Project</strong>
+                            <button type="button" class="filter-menu-clear" data-filter-clear>Clear</button>
+                        </div>
+                        <div class="filter-option-list">
+                            <button type="button" class="filter-option{% if not active_filters.project %} is-selected{% endif %}" data-filter-option data-value="">All projects</button>
+                            {% for value in filter_options.projects %}
+                            <button type="button" class="filter-option{% if active_filters.project == value %} is-selected{% endif %}" data-filter-option data-value="{{ value }}">{{ value }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
             <label class="filter-field filter-field-date">Created Since
                 <input name="created_since" type="date" value="{{ active_filters.created_since }}">
             </label>
@@ -215,4 +286,91 @@
     </article>
     {% endfor %}
 </section>
+{% endblock %}
+{% block scripts %}
+<script>
+const filterControls = Array.from(document.querySelectorAll("[data-filter-control]"));
+
+function closeFilter(control) {
+    const trigger = control.querySelector("[data-filter-trigger]");
+    const menu = control.querySelector("[data-filter-menu]");
+    control.classList.remove("is-open");
+    trigger?.setAttribute("aria-expanded", "false");
+    if (menu) {
+        menu.hidden = true;
+    }
+}
+
+function openFilter(control) {
+    filterControls.forEach((candidate) => {
+        if (candidate !== control) {
+            closeFilter(candidate);
+        }
+    });
+    const trigger = control.querySelector("[data-filter-trigger]");
+    const menu = control.querySelector("[data-filter-menu]");
+    control.classList.add("is-open");
+    trigger?.setAttribute("aria-expanded", "true");
+    if (menu) {
+        menu.hidden = false;
+    }
+}
+
+function syncFilter(control, value) {
+    const input = control.querySelector("[data-filter-input]");
+    const trigger = control.querySelector("[data-filter-trigger]");
+    const valueNode = control.querySelector("[data-filter-value]");
+    const selectedOption = control.querySelector(`[data-filter-option][data-value="${CSS.escape(value)}"]`);
+    const fallbackOption = control.querySelector('[data-filter-option][data-value=""]');
+    const activeOption = selectedOption || fallbackOption;
+    input.value = value;
+    valueNode.textContent = value ? (activeOption?.textContent?.trim() || "") : "";
+    trigger?.classList.toggle("is-active", Boolean(value));
+    control.querySelectorAll("[data-filter-option]").forEach((option) => {
+        option.classList.toggle("is-selected", option === activeOption);
+    });
+}
+
+filterControls.forEach((control) => {
+    const trigger = control.querySelector("[data-filter-trigger]");
+    const clearButton = control.querySelector("[data-filter-clear]");
+    const input = control.querySelector("[data-filter-input]");
+
+    trigger?.addEventListener("click", () => {
+        if (control.classList.contains("is-open")) {
+            closeFilter(control);
+            return;
+        }
+        openFilter(control);
+    });
+
+    clearButton?.addEventListener("click", () => {
+        syncFilter(control, "");
+        closeFilter(control);
+    });
+
+    control.querySelectorAll("[data-filter-option]").forEach((option) => {
+        option.addEventListener("click", () => {
+            syncFilter(control, option.dataset.value || "");
+            closeFilter(control);
+        });
+    });
+
+    syncFilter(control, input?.value || "");
+});
+
+document.addEventListener("click", (event) => {
+    filterControls.forEach((control) => {
+        if (!control.contains(event.target)) {
+            closeFilter(control);
+        }
+    });
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        filterControls.forEach((control) => closeFilter(control));
+    }
+});
+</script>
 {% endblock %}

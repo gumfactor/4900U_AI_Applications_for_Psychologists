@@ -17,7 +17,7 @@ By the end of the workshop, students should be able to:
 1. Create notes using a consistent metadata contract.
 2. Link notes so the collection behaves like a small knowledge graph.
 3. Use AI to draft or enrich notes without treating AI output as final truth.
-4. Track changes with Git and keep AI work reproducible with logs.
+4. Track changes with Git and document important review decisions in notes.
 
 ## Repository Layout
 
@@ -28,7 +28,6 @@ By the end of the workshop, students should be able to:
 |-- README.md
 |-- addons/
 |-- docs/
-|-- logs/
 |-- notes/
 |-- prompts/
 |-- sources/
@@ -83,18 +82,9 @@ Every AI-assisted note must move through this status lifecycle:
 
 Markdown notes remain the source of truth. AI output is a draft unless a human updates the note and marks it reviewed.
 
-### 5. Log the AI step
+### 5. Record review outcomes in the note
 
-Every AI interaction that changes a note should be logged in [`logs/`](./logs/) using the log template.
-
-Minimum log data:
-
-- date/time
-- prompt template used
-- input file(s)
-- model
-- output location
-- review outcome
+If AI helps draft or enrich a note, update the note metadata and body so the human-reviewed version stays explicit in the note itself.
 
 ## Recommended Commit Milestones
 
@@ -153,7 +143,6 @@ By the end of the workshop, a student repository should contain:
 - links between notes
 - at least 1 AI-assisted note
 - at least 1 reviewed note that was AI-assisted
-- at least 1 AI interaction log
 - a clear Git history with milestone commits
 
 ## Optional Addons

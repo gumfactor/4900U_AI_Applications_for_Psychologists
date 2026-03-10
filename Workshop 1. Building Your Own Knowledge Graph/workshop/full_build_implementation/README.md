@@ -1,16 +1,16 @@
 # Full Build Implementation
 
-This is the instructor-facing reference implementation for the workshop. It extends the student-facing Markdown/YAML workflow into a working FastAPI application with a browse/query UI, bounded Gemini tasks, AI interaction logging, and note authoring built around multi-value entity attributes.
+This is the instructor-facing reference implementation for the workshop. It extends the student-facing Markdown/YAML workflow into a working FastAPI application with a browse/query UI, bounded Gemini tasks, and note authoring built around multi-value entity attributes.
 
 ## Current Feature Set
 
 - `Notes` is the default landing page.
-- `Stats` summarizes note and log counts.
+- The `Notes` banner shows the current note count and filtered result count.
 - New notes can be created from the slideout editor.
 - When Gemini is available, new-note metadata is inferred from the title and body before final save.
 - Existing notes can be edited in-app.
 - Tags, people, sources, projects, and topics link into connected exploration views.
-- Note detail pages show related AI activity logs and provenance context.
+- Note detail pages show related notes, metadata, and version history.
 - The `Multi Note Queries` page supports question answering across one or more selected notes.
 
 ## Quick Start
@@ -30,7 +30,7 @@ If no Gemini key is configured, the app runs in browse-only mode and disables AI
 
 1. Start on `Notes` and open the new-note slideout.
 2. Show AI-assisted attribute suggestion on save.
-3. Open the resulting note and inspect its related AI activity block.
+3. Open the resulting note and inspect the generated structure and metadata.
 4. Edit the note in-app.
 5. Click a tag, person, source, or project to move into the connected exploration view.
 6. Use `Multi Note Queries` for cross-note Q&A.

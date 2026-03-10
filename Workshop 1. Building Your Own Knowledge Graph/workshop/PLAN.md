@@ -7,7 +7,7 @@ The workshop should be taught as a staged build, where each stage leaves student
 
 ## Implementation Changes
 ### Mandatory core
-- Create a starter repo with a single PKB root containing `notes/`, `templates/`, `sources/`, `prompts/`, and `logs/`.
+- Create a starter repo with a single PKB root containing `notes/`, `templates/`, `sources/`, and `prompts/`.
 - Store each knowledge item as one Markdown file with required YAML fields:
   - `id`
   - `title`
@@ -53,14 +53,7 @@ The workshop should be taught as a staged build, where each stage leaves student
 - Use short, meaningful commit messages tied to workshop milestones, not arbitrary save-point commits.
 - Add a lightweight `.gitignore` for secrets, transient exports, and local caches.
 - Keep API keys out of notes and source files. Use environment variables or per-user local config excluded from Git.
-- Add a logging convention for AI activity in `logs/`:
-  - date/time
-  - prompt template used
-  - input file(s)
-  - model
-  - output location
-  - review outcome
-- Teach students to treat logs as reproducibility artifacts, not as polished deliverables.
+- Keep evidence of AI assistance in note metadata and revision history rather than a separate log workflow.
 
 ### Optional addons
 - `Addon A: Better synthesis`

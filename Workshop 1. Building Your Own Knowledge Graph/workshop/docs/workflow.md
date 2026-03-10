@@ -9,8 +9,7 @@
 5. Paste the draft output into the note.
 6. Review and edit the note manually.
 7. Update `status`, `updated`, and `human_reviewed`.
-8. Log the AI interaction in `logs/`.
-9. Commit a meaningful milestone.
+8. Commit a meaningful milestone.
 
 ## Human Review Rule
 

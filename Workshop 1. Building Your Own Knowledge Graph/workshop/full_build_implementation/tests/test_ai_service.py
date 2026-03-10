@@ -1,9 +1,7 @@
 from pathlib import Path
-from shutil import rmtree
 
 from app.models import AiTaskRequest
 from app.services.ai_service import AiService
-from app.services.log_service import LogService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
 
@@ -37,21 +35,12 @@ None yet.
 - None yet"""
         return "## Summary\n\nMocked output.\n\n## Key Points\n\n- Mocked"
 
-
-def build_logs_dir(base_dir: Path, name: str) -> Path:
-    logs_dir = base_dir / "_test_runtime" / name
-    rmtree(logs_dir, ignore_errors=True)
-    logs_dir.mkdir(parents=True, exist_ok=True)
-    return logs_dir
-
-
 def test_ai_service_runs_question_answering_for_selected_notes() -> None:
     base_dir = Path(__file__).resolve().parent.parent
     fake_client = FakeGeminiClient()
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
         PromptRepository(base_dir / "data" / "prompts"),
-        LogService(build_logs_dir(base_dir, "ai-service-summary")),
         fake_client,
         "gemini-2.5-flash-lite",
         "gemini-2.5-flash",
@@ -66,7 +55,6 @@ def test_ai_service_runs_question_answering_for_selected_notes() -> None:
     )
     assert result.task == "question_answering"
     assert "Question:\nHow do these notes connect?" in fake_client.last_prompt
-    assert result.log_path is not None
 
 
 def test_ai_service_question_answering_requires_question() -> None:
@@ -74,7 +62,6 @@ def test_ai_service_question_answering_requires_question() -> None:
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
         PromptRepository(base_dir / "data" / "prompts"),
-        LogService(build_logs_dir(base_dir, "ai-service-question")),
         FakeGeminiClient(),
         "gemini-2.5-flash-lite",
         "gemini-2.5-flash",
@@ -95,7 +82,6 @@ def test_ai_service_structures_note_body() -> None:
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
         PromptRepository(base_dir / "data" / "prompts"),
-        LogService(build_logs_dir(base_dir, "ai-service-structure")),
         fake_client,
         "gemini-2.5-flash-lite",
         "gemini-2.5-flash",

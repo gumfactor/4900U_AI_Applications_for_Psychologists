@@ -24,7 +24,6 @@ from app.models import (
 from app.services.ai_service import AiService
 from app.services.attachment_service import AttachmentService
 from app.services.gemini_client import GeminiClient
-from app.services.log_service import LogService
 from app.services.note_history_service import NoteHistoryService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
@@ -36,12 +35,10 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     note_repository = NoteRepository(settings.notes_dir)
     prompt_repository = PromptRepository(settings.prompts_dir)
     attachment_service = AttachmentService(settings.attachments_dir)
-    log_service = LogService(settings.logs_dir)
     note_history_service = NoteHistoryService(settings.history_dir, settings.notes_dir)
     ai_service = AiService(
         note_repository=note_repository,
         prompt_repository=prompt_repository,
-        log_service=log_service,
         gemini_client=gemini_client or (GeminiClient(settings.gemini_api_key) if settings.ai_enabled else None),
         default_model=settings.default_model,
         high_quality_model=settings.high_quality_model,
@@ -77,21 +74,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             project=project,
             created_since=created_since,
             view=view,
-        )
-
-    @app.get("/stats", response_class=HTMLResponse)
-    def dashboard(request: Request) -> HTMLResponse:
-        summary = _build_dashboard_summary(settings, note_repository, log_service)
-        return templates.TemplateResponse(
-            request,
-            "dashboard.html",
-            {
-                "summary": summary,
-                "recent_notes": note_repository.list_notes()[:5],
-                "recent_logs": log_service.list_logs()[:5],
-                "ai_enabled": settings.ai_enabled,
-                "title": "Stats",
-            },
         )
 
     @app.get("/notes", response_class=HTMLResponse)
@@ -211,36 +193,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             },
         )
 
-    @app.get("/logs", response_class=HTMLResponse)
-    def logs_page(request: Request) -> HTMLResponse:
-        return templates.TemplateResponse(
-            request,
-            "logs.html",
-            {
-                "logs": log_service.list_logs(),
-                "ai_enabled": settings.ai_enabled,
-                "title": "Logs",
-                "note_href_for_log": _note_href_for_log,
-            },
-        )
-
-    @app.get("/logs/{slug}", response_class=HTMLResponse)
-    def log_detail(request: Request, slug: str) -> HTMLResponse:
-        try:
-            log_entry = log_service.get_log(slug)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        return templates.TemplateResponse(
-            request,
-            "log_detail.html",
-            {
-                "log_entry": log_entry,
-                "ai_enabled": settings.ai_enabled,
-                "title": "Log Detail",
-                "note_href_for_log": _note_href_for_log,
-            },
-        )
-
     @app.get("/ai", response_class=HTMLResponse)
     def ai_page(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
@@ -257,7 +209,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     @app.get("/api/dashboard")
     def dashboard_api() -> DashboardSummary:
-        return _build_dashboard_summary(settings, note_repository, log_service)
+        return _build_dashboard_summary(settings, note_repository)
 
     @app.get("/api/notes")
     def notes_api() -> list[dict]:
@@ -269,10 +221,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             return note_repository.get_note(slug).model_dump()
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    @app.get("/api/logs")
-    def logs_api() -> list[dict]:
-        return [log_entry.model_dump() for log_entry in log_service.list_logs()]
 
     @app.post("/api/ai/run")
     def run_ai_task(task_request: AiTaskRequest) -> dict:
@@ -291,16 +239,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             )
         except (RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=f"Could not infer metadata: {exc}") from exc
-        if inferred_metadata.get("model"):
-            log_service.write_log(
-                task="metadata_extraction",
-                prompt_slug=str(inferred_metadata["prompt_slug"]),
-                model=str(inferred_metadata["model"]),
-                input_files=list(inferred_metadata["input_paths"]),
-                output_target="ui-preview",
-                review_outcome="pending-review",
-                notes="Metadata preview generated during note creation.",
-            )
         return InferMetadataResponse(
             topics=list(inferred_metadata["topics"]),
             people=list(inferred_metadata["people"]),
@@ -316,7 +254,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     @app.post("/api/notes/save-draft")
     def save_draft(request_body: SaveDraftRequest) -> dict:
         structured_content = request_body.content
-        structured_note = None
         if not split_sections(request_body.content):
             try:
                 structured_note = ai_service.structure_note_body(
@@ -325,7 +262,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 )
                 structured_content = str(structured_note["content"])
             except (RuntimeError, ValueError):
-                structured_note = None
+                pass
         inferred_metadata = None
         try:
             inferred_metadata = ai_service.infer_note_metadata(
@@ -343,7 +280,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
             source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
             attachments = request_body.attachments
-            used_ai_metadata = bool(inferred_metadata.get("model"))
         else:
             topics = request_body.topics
             people = request_body.people
@@ -352,7 +288,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             tags = request_body.tags
             source_refs = request_body.source_refs
             attachments = request_body.attachments
-            used_ai_metadata = False
         attachments = _merge_metadata_lists(
             attachments,
             attachment_service.save_uploads(_note_slug_from_title(request_body.title), request_body.attachment_uploads),
@@ -369,35 +304,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             content=structured_content,
         )
         note_history_service.record_version(note, action="created")
-        if structured_note and structured_note.get("model"):
-            log_service.write_log(
-                task="note_body_structuring",
-                prompt_slug=str(structured_note["prompt_slug"]),
-                model=str(structured_note["model"]),
-                input_files=[],
-                output_target=note.path,
-                review_outcome="pending-review",
-                notes="Note body structured during note creation.",
-            )
-        if inferred_metadata and used_ai_metadata:
-            log_service.write_log(
-                task="metadata_extraction",
-                prompt_slug=str(inferred_metadata["prompt_slug"]),
-                model=str(inferred_metadata["model"]),
-                input_files=list(inferred_metadata["input_paths"]),
-                output_target=note.path,
-                review_outcome="pending-review",
-                notes="Metadata inferred during note creation.",
-            )
-        log_service.write_log(
-            task="save_draft",
-            prompt_slug="manual-or-ui",
-            model="n/a",
-            input_files=source_refs,
-            output_target=note.path,
-            review_outcome="pending-review",
-            notes="Draft note saved from UI.",
-        )
         return note.model_dump()
 
     @app.put("/api/notes/{slug}")
@@ -426,15 +332,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         if _notes_differ(existing_note, note):
             note_history_service.record_version(note, action="updated")
-        log_service.write_log(
-            task="update_note",
-            prompt_slug="manual-edit",
-            model="n/a",
-            input_files=note.metadata.source_refs,
-            output_target=note.path,
-            review_outcome="updated",
-            notes="Existing note edited in UI.",
-        )
         return note.model_dump()
 
     @app.delete("/api/notes/{slug}")
@@ -445,15 +342,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         attachment_service.delete_note_attachments(slug)
         note_history_service.delete_history(slug)
-        log_service.write_log(
-            task="delete_note",
-            prompt_slug="manual-delete",
-            model="n/a",
-            input_files=note.metadata.source_refs,
-            output_target=note.path,
-            review_outcome="deleted",
-            notes="Note deleted from UI.",
-        )
         return {"slug": slug, "deleted": True}
 
     @app.exception_handler(404)
@@ -471,13 +359,10 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 def _build_dashboard_summary(
     settings: Settings,
     note_repository: NoteRepository,
-    log_service: LogService,
 ) -> DashboardSummary:
     notes = note_repository.list_notes()
-    logs = log_service.list_logs()
     return DashboardSummary(
         total_notes=len(notes),
-        total_logs=len(logs),
         ai_enabled=settings.ai_enabled,
     )
 
@@ -528,6 +413,8 @@ def _render_notes_page(
         "notes.html",
         {
             "notes": notes,
+            "total_notes": len(all_notes),
+            "visible_notes": len(notes),
             "filter_options": _build_filter_options(all_notes),
             "ai_enabled": settings.ai_enabled,
             "title": "Notes",
@@ -793,14 +680,6 @@ def _build_draft_state(note) -> dict[str, object]:
         "evidence": [item for item in note.evidence if item not in placeholder_evidence],
         "links": visible_links,
     }
-
-
-def _note_href_for_log(log_entry) -> str | None:
-    output_target = getattr(log_entry, "output_target", "")
-    if not output_target.startswith("data/notes/") or not output_target.endswith(".md"):
-        return None
-    slug = Path(output_target).stem
-    return f"/notes/{slug}"
 
 
 app = create_app()

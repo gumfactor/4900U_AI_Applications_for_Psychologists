@@ -27,7 +27,6 @@ class Settings:
     notes_dir: Path
     attachments_dir: Path
     prompts_dir: Path
-    logs_dir: Path
     history_dir: Path
     templates_dir: Path
     static_dir: Path
@@ -52,7 +51,6 @@ def get_settings(base_dir: Path | None = None) -> Settings:
         notes_dir=data_dir / "notes",
         attachments_dir=data_dir / "attachments",
         prompts_dir=data_dir / "prompts",
-        logs_dir=data_dir / "logs",
         history_dir=data_dir / "history",
         templates_dir=resolved_base_dir / "app" / "templates",
         static_dir=resolved_base_dir / "app" / "static",

@@ -76,20 +76,6 @@ class AiTaskResult(BaseModel):
     prompt_text: str
     output_text: str
     input_paths: list[str] = Field(default_factory=list)
-    log_path: str | None = None
-
-
-class AiLogEntry(BaseModel):
-    slug: str
-    timestamp: str
-    task: str
-    prompt_slug: str
-    model: str
-    input_files: list[str] = Field(default_factory=list)
-    output_target: str
-    review_outcome: str
-    notes: str = ""
-    raw_content: str = ""
 
 
 class ActivityEntry(BaseModel):
@@ -157,5 +143,4 @@ class UpdateNoteRequest(BaseModel):
 
 class DashboardSummary(BaseModel):
     total_notes: int
-    total_logs: int
     ai_enabled: bool

@@ -57,19 +57,19 @@ def build_test_client() -> TestClient:
     return TestClient(create_app(base_dir=copied_base_dir, gemini_client=FakeGeminiClient()))
 
 
-def test_notes_and_stats_routes() -> None:
+def test_notes_page_shows_note_count_and_filters() -> None:
     client = build_test_client()
     notes_page = client.get("/")
-    stats_page = client.get("/stats")
     row_notes_page = client.get("/notes?view=row")
     searched_notes_page = client.get("/notes?q=provenance")
     dated_notes_page = client.get("/notes?created_since=2026-03-09")
     notes = client.get("/api/notes")
     assert notes_page.status_code == 200
-    assert stats_page.status_code == 200
     assert row_notes_page.status_code == 200
     assert searched_notes_page.status_code == 200
     assert dated_notes_page.status_code == 200
+    assert "total notes" in notes_page.text
+    assert "matching notes out of" in searched_notes_page.text
     assert "AI Provenance Logging" in searched_notes_page.text
     assert '/notes/note-neuroimaging-in-psychopathy?return_to=/notes%3Fcreated_since%3D2026-03-09' in dated_notes_page.text
     assert '/notes/concept-ai-provenance-logging?return_to=/notes%3Fcreated_since%3D2026-03-09' not in dated_notes_page.text
@@ -77,6 +77,7 @@ def test_notes_and_stats_routes() -> None:
     assert "note-attachment-indicator" in notes_page.text
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
+    assert client.get("/stats").status_code == 404
 
 
 def test_ai_run_and_save_draft_routes() -> None:
@@ -375,23 +376,3 @@ def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> N
     assert "Point one" in detail_response.text
     assert "Evidence / Sources" in detail_response.text
     assert "Needs manual editing" not in detail_response.text
-
-
-def test_logs_link_to_affected_notes() -> None:
-    client = build_test_client()
-    client.post(
-        "/api/notes/save-draft",
-        json={
-            "title": "Log Link Draft",
-            "topics": [],
-            "people": [],
-            "sources": [],
-            "projects": [],
-            "source_refs": ["data/sources/source-pkb-design-principles.md"],
-            "tags": [],
-            "content": "Draft body for log linkage.",
-        },
-    )
-    logs_page = client.get("/logs")
-    assert logs_page.status_code == 200
-    assert "Open affected note" in logs_page.text

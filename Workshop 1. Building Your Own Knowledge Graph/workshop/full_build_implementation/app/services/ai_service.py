@@ -6,7 +6,6 @@ import yaml
 
 from app.models import AiTaskRequest, AiTaskResult, Note
 from app.services.gemini_client import GeminiClient
-from app.services.log_service import LogService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
 
@@ -22,14 +21,12 @@ class AiService:
         self,
         note_repository: NoteRepository,
         prompt_repository: PromptRepository,
-        log_service: LogService,
         gemini_client: GeminiClient | None,
         default_model: str,
         high_quality_model: str,
     ) -> None:
         self.note_repository = note_repository
         self.prompt_repository = prompt_repository
-        self.log_service = log_service
         self.gemini_client = gemini_client
         self.default_model = default_model
         self.high_quality_model = high_quality_model
@@ -56,14 +53,6 @@ class AiService:
 
         prompt_text = "\n\n".join(blocks).strip()
         output_text = self.gemini_client.generate(prompt_text, model)
-        log_path = self.log_service.write_log(
-            task=request.task,
-            prompt_slug=prompt_slug,
-            model=model,
-            input_files=input_paths,
-            output_target="ui-preview",
-            notes="Generated through instructor demo UI.",
-        )
         return AiTaskResult(
             task=request.task,
             model=model,
@@ -71,7 +60,6 @@ class AiService:
             prompt_text=prompt_text,
             output_text=output_text,
             input_paths=input_paths,
-            log_path=log_path,
         )
 
     def infer_note_metadata(

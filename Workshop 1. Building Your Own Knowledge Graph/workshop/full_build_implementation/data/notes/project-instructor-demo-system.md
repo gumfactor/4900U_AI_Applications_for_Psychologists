@@ -1,7 +1,6 @@
 ---
 id: project-instructor-demo-system
 title: Instructor Demo System
-status: final
 topics:
   - workshop infrastructure
   - personal knowledge bases
@@ -26,8 +25,6 @@ source_refs:
   - data/sources/source-bounded-querying.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: true
-human_reviewed: true
 ---
 
 # Instructor Demo System
@@ -58,3 +55,4 @@ The instructor demo system is a working reference implementation that shows how 
 ## Open Questions
 
 - Which optional enhancements belong in a later iteration rather than the main classroom demo?
+

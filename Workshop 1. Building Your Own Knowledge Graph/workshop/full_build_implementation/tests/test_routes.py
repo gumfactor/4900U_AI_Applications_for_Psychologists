@@ -10,8 +10,7 @@ from app.main import create_app
 class FakeGeminiClient:
     def generate(self, prompt: str, model: str) -> str:
         if "Return the result in YAML only with exactly these keys" in prompt:
-            return """note_kind: brainstorming
-topics:
+            return """topics:
   - Testing
 people:
   - Test User
@@ -64,7 +63,6 @@ def test_ai_run_and_save_draft_routes() -> None:
         "/api/notes/save-draft",
         json={
             "title": "Runtime Draft",
-            "note_kind": "synthesis",
             "topics": ["Testing"],
             "people": ["Test User"],
             "sources": ["PKB Design Principles"],
@@ -72,12 +70,9 @@ def test_ai_run_and_save_draft_routes() -> None:
             "source_refs": ["data/sources/source-pkb-design-principles.md"],
             "tags": ["runtime", "demo"],
             "content": ai_response.json()["output_text"],
-            "ai_assisted": True,
         },
     )
     assert draft_response.status_code == 200
-    assert draft_response.json()["metadata"]["status"] == "ai-drafted"
-    assert draft_response.json()["metadata"]["note_kind"] == "synthesis"
     assert draft_response.json()["metadata"]["topics"] == ["Testing"]
     assert draft_response.json()["metadata"]["people"] == ["Test User"]
     assert "runtime" in draft_response.json()["metadata"]["tags"]
@@ -95,7 +90,6 @@ def test_infer_metadata_route() -> None:
     )
     assert response.status_code == 200
     assert response.json()["ai_enabled"] is True
-    assert response.json()["note_kind"] == "brainstorming"
     assert "Testing" in response.json()["topics"]
 
 
@@ -107,7 +101,6 @@ def test_edit_note_routes() -> None:
         "/api/notes/concept-personal-knowledge-base",
         json={
             "title": "Edited PKB Note",
-            "note_kind": "reflection",
             "topics": ["Edited Topic"],
             "people": ["Workshop Instructor"],
             "sources": ["PKB Design Principles"],
@@ -115,14 +108,10 @@ def test_edit_note_routes() -> None:
             "source_refs": ["data/sources/source-pkb-design-principles.md"],
             "tags": ["edited"],
             "content": "Edited note body.",
-            "status": "reviewed",
-            "ai_assisted": True,
-            "human_reviewed": True,
         },
     )
     assert update_response.status_code == 200
     assert update_response.json()["metadata"]["title"] == "Edited PKB Note"
-    assert update_response.json()["metadata"]["status"] == "reviewed"
 
 
 def test_explore_route() -> None:
@@ -136,7 +125,7 @@ def test_note_detail_shows_provenance() -> None:
     client = build_test_client()
     response = client.get("/notes/concept-personal-knowledge-base")
     assert response.status_code == 200
-    assert "Provenance" in response.text
+    assert "AI Activity" in response.text
     assert "Related AI logs" in response.text
 
 
@@ -153,7 +142,6 @@ def test_logs_link_to_affected_notes() -> None:
         "/api/notes/save-draft",
         json={
             "title": "Log Link Draft",
-            "note_kind": "synthesis",
             "topics": [],
             "people": [],
             "sources": [],
@@ -161,7 +149,6 @@ def test_logs_link_to_affected_notes() -> None:
             "source_refs": ["data/sources/source-pkb-design-principles.md"],
             "tags": [],
             "content": "Draft body for log linkage.",
-            "ai_assisted": True,
         },
     )
     logs_page = client.get("/logs")

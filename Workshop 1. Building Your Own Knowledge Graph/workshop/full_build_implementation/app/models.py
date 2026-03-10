@@ -5,8 +5,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-NoteKind = Literal["synthesis", "reflection", "method-note", "brainstorming"]
-NoteStatus = Literal["captured", "ai-drafted", "reviewed", "final"]
 RelationshipType = Literal["related_to", "supports", "contradicts", "applies_to", "mentions"]
 AiTaskType = Literal["source_summary", "metadata_extraction", "related_note_suggestion", "question_answering"]
 
@@ -14,8 +12,6 @@ AiTaskType = Literal["source_summary", "metadata_extraction", "related_note_sugg
 class NoteMetadata(BaseModel):
     id: str
     title: str
-    note_kind: NoteKind | str | None = None
-    status: NoteStatus
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -24,8 +20,6 @@ class NoteMetadata(BaseModel):
     source_refs: list[str] = Field(default_factory=list)
     created: str
     updated: str
-    ai_assisted: bool
-    human_reviewed: bool
 
 
 class NoteLink(BaseModel):
@@ -95,7 +89,6 @@ class AiLogEntry(BaseModel):
 
 class SaveDraftRequest(BaseModel):
     title: str
-    note_kind: NoteKind | str | None = None
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -103,8 +96,6 @@ class SaveDraftRequest(BaseModel):
     source_refs: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     content: str
-    ai_assisted: bool = True
-    metadata_reviewed: bool = False
 
 
 class InferMetadataRequest(BaseModel):
@@ -114,7 +105,6 @@ class InferMetadataRequest(BaseModel):
 
 
 class InferMetadataResponse(BaseModel):
-    note_kind: NoteKind | str | None = None
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -126,14 +116,8 @@ class InferMetadataResponse(BaseModel):
     prompt_slug: str | None = None
 
 
-class UpdateNoteStatusRequest(BaseModel):
-    status: NoteStatus
-    human_reviewed: bool
-
-
 class UpdateNoteRequest(BaseModel):
     title: str
-    note_kind: NoteKind | str | None = None
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -141,15 +125,10 @@ class UpdateNoteRequest(BaseModel):
     source_refs: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     content: str
-    status: NoteStatus
-    ai_assisted: bool
-    human_reviewed: bool
 
 
 class DashboardSummary(BaseModel):
     total_notes: int
     total_sources: int
     total_logs: int
-    note_kind_counts: dict[str, int]
-    note_status_counts: dict[str, int]
     ai_enabled: bool

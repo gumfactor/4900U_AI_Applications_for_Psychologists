@@ -1,7 +1,6 @@
 ---
 id: person-workshop-instructor
 title: Workshop Instructor
-status: final
 topics:
   - teaching
   - ai-assisted learning
@@ -21,15 +20,13 @@ source_refs:
   - data/sources/source-ai-review-discipline.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: false
-human_reviewed: true
 ---
 
 # Workshop Instructor
 
 ## Summary
 
-The workshop instructor demonstrates the workflow, enforces review discipline, and helps students distinguish between useful AI assistance and over-trusting model output.
+The workshop instructor demonstrates the workflow, models bounded AI use, and helps students improve notes through editing rather than through separate AI-versus-human note categories.
 
 ## Key Points
 
@@ -50,3 +47,4 @@ The workshop instructor demonstrates the workflow, enforces review discipline, a
 ## Open Questions
 
 - Which parts of the workflow should be demonstrated live versus assigned as practice?
+

@@ -1,7 +1,6 @@
 ---
 id: concept-bounded-querying
 title: Bounded Querying
-status: final
 topics:
   - retrieval
   - question answering
@@ -19,8 +18,6 @@ source_refs:
   - data/sources/source-bounded-querying.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: false
-human_reviewed: true
 ---
 
 # Bounded Querying
@@ -48,3 +45,4 @@ Bounded querying improves reliability by restricting question answering to a car
 ## Open Questions
 
 - How should bounded bundles be chosen for the strongest answers?
+

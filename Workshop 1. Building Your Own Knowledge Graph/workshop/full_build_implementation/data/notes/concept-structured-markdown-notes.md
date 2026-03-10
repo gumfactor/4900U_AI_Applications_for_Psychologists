@@ -1,7 +1,6 @@
 ---
 id: concept-structured-markdown-notes
 title: Structured Markdown Notes
-status: final
 topics:
   - markdown
   - knowledge management
@@ -20,8 +19,6 @@ source_refs:
   - data/sources/source-pkb-design-principles.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: false
-human_reviewed: true
 ---
 
 # Structured Markdown Notes
@@ -49,3 +46,4 @@ Structured Markdown notes combine human readability with just enough metadata fo
 ## Open Questions
 
 - When does a file-first system need database support?
+

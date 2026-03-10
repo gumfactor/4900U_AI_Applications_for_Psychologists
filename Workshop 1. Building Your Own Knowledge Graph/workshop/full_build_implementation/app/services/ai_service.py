@@ -109,7 +109,6 @@ class AiService:
     ) -> dict[str, object]:
         if not self.gemini_client:
             return {
-                "note_kind": None,
                 "topics": [],
                 "people": [],
                 "sources": [],
@@ -156,8 +155,6 @@ class AiService:
                     None,
                     [
                         f"Title: {note.metadata.title}",
-                        f"Note Kind: {note.metadata.note_kind}" if note.metadata.note_kind else "",
-                        f"Status: {note.metadata.status}",
                         f"Topics: {', '.join(note.metadata.topics)}",
                         f"Tags: {', '.join(note.metadata.tags)}",
                         f"People: {', '.join(note.metadata.people)}",
@@ -187,7 +184,6 @@ class AiService:
         if not isinstance(parsed, dict):
             raise ValueError("Metadata extraction did not return a usable metadata mapping.")
         return {
-            "note_kind": AiService._normalize_scalar(parsed.get("note_kind")),
             "topics": AiService._normalize_list(parsed.get("topics")),
             "people": AiService._normalize_list(parsed.get("people")),
             "sources": AiService._normalize_list(parsed.get("sources")),
@@ -225,7 +221,7 @@ class AiService:
 
     @staticmethod
     def _fallback_metadata_mapping(cleaned: str) -> dict[str, object]:
-        allowed_keys = {"note_kind", "topics", "people", "sources", "projects", "tags", "source_refs"}
+        allowed_keys = {"topics", "people", "sources", "projects", "tags", "source_refs"}
         parsed: dict[str, object] = {}
         current_list_key: str | None = None
         for line in cleaned.splitlines():
@@ -240,8 +236,8 @@ class AiService:
                     continue
                 value = raw_value.strip()
                 if value in {"", "null", "None"}:
-                    parsed[key] = None if key == "note_kind" else []
-                    current_list_key = None if key == "note_kind" else key
+                    parsed[key] = []
+                    current_list_key = key
                 else:
                     parsed[key] = value
                     current_list_key = None

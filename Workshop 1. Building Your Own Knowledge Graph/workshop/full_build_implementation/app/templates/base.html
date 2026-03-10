@@ -26,22 +26,9 @@
             <div class="note-panel-actions">
                 <button type="submit">Save Note</button>
             </div>
-            <label class="inline-checkbox">
-                <input name="ai_assisted" type="checkbox">
-                Mark note content as AI-assisted
-            </label>
             <p class="muted-text">On save, AI will infer note attributes from the title and body when Gemini is available. Anything you enter above overrides or extends the AI suggestions.</p>
             <div class="optional-fields-block">
                 <p class="eyebrow">Optional Details</p>
-                <label>Note Kind
-                    <select name="note_kind">
-                        <option value="" selected>Select note kind (optional)</option>
-                        <option value="synthesis">synthesis</option>
-                        <option value="reflection">reflection</option>
-                        <option value="method-note">method-note</option>
-                        <option value="brainstorming">brainstorming</option>
-                    </select>
-                </label>
                 <label>Topics
                     <input name="topics" type="text" placeholder="Optional override; AI will suggest topics">
                 </label>
@@ -99,15 +86,13 @@
     async function saveNote(formData) {
         const payload = {
             title: formData.get("title"),
-            note_kind: formData.get("note_kind"),
             topics: splitCsv(formData.get("topics")),
             people: splitCsv(formData.get("people")),
             sources: splitCsv(formData.get("sources")),
             projects: splitCsv(formData.get("projects")),
             tags: splitCsv(formData.get("tags")),
             source_refs: splitCsv(formData.get("source_refs")),
-            content: formData.get("content") || "",
-            ai_assisted: formData.get("ai_assisted") === "on"
+            content: formData.get("content") || ""
         };
         const response = await fetch("/api/notes/save-draft", {
             method: "POST",

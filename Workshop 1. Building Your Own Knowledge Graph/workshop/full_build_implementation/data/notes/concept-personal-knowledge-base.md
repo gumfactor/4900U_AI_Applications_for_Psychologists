@@ -1,7 +1,6 @@
 ---
 id: concept-personal-knowledge-base
 title: Personal Knowledge Base
-status: final
 topics:
   - knowledge management
   - personal knowledge bases
@@ -19,8 +18,6 @@ source_refs:
   - data/sources/source-pkb-design-principles.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: false
-human_reviewed: true
 ---
 
 # Personal Knowledge Base
@@ -48,3 +45,4 @@ A personal knowledge base is a structured collection of notes designed to preser
 ## Open Questions
 
 - Which metadata fields provide the biggest retrieval benefit in practice?
+

@@ -32,7 +32,6 @@ class NoteRepository:
     def save_draft(
         self,
         title: str,
-        note_kind: str | None,
         topics: list[str],
         people: list[str],
         sources: list[str],
@@ -40,11 +39,9 @@ class NoteRepository:
         source_refs: list[str],
         tags: list[str],
         content: str,
-        ai_assisted: bool,
     ) -> Note:
         filename, markdown = build_note_markdown(
             title,
-            note_kind,
             topics,
             people,
             sources,
@@ -52,7 +49,6 @@ class NoteRepository:
             source_refs,
             tags,
             content,
-            ai_assisted,
         )
         path = self.notes_dir / filename
         path.write_text(markdown, encoding="utf-8")
@@ -62,7 +58,6 @@ class NoteRepository:
         self,
         slug: str,
         title: str,
-        note_kind: str | None,
         topics: list[str],
         people: list[str],
         sources: list[str],
@@ -70,16 +65,12 @@ class NoteRepository:
         source_refs: list[str],
         tags: list[str],
         content: str,
-        status: str,
-        ai_assisted: bool,
-        human_reviewed: bool,
     ) -> Note:
         note = self.get_note(slug)
         path = self.notes_dir / f"{note.slug}.md"
         metadata = {
             "id": note.metadata.id,
             "title": title,
-            "status": status,
             "topics": topics,
             "people": people,
             "sources": sources,
@@ -88,23 +79,8 @@ class NoteRepository:
             "source_refs": source_refs,
             "created": note.metadata.created,
             "updated": today_iso(),
-            "ai_assisted": ai_assisted,
-            "human_reviewed": human_reviewed,
         }
-        if note_kind:
-            metadata["note_kind"] = note_kind
         path.write_text(build_note_document(title, metadata, content), encoding="utf-8")
-        return self._load_note(path)
-
-    def update_status(self, slug: str, status: str, human_reviewed: bool) -> Note:
-        note = self.get_note(slug)
-        path = self.notes_dir / f"{note.slug}.md"
-        frontmatter, body = parse_frontmatter(path.read_text(encoding="utf-8"))
-        frontmatter["status"] = status
-        frontmatter["human_reviewed"] = human_reviewed
-        frontmatter["updated"] = today_iso()
-        updated_note_text = f"---\n{dump_frontmatter(frontmatter)}\n---\n\n{body}\n"
-        path.write_text(updated_note_text, encoding="utf-8")
         return self._load_note(path)
 
     def _load_note(self, path: Path) -> Note:

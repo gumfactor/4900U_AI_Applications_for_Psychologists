@@ -4,8 +4,8 @@
     <div><p class="eyebrow">Note Browser</p><h2>Notes</h2></div>
     <div class="page-header-actions compact-actions">
         <div class="view-toggle" role="group" aria-label="Toggle note layout">
-            <a href="/notes?note_kind={{ active_filters.note_kind | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
-            <a href="/notes?note_kind={{ active_filters.note_kind | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=row" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
+            <a href="/notes?topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
+            <a href="/notes?topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=row" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
         </div>
     </div>
 </section>
@@ -13,14 +13,6 @@
     <form method="get" action="/notes" class="filter-grid">
         <label>Search
             <input name="q" type="text" value="{{ active_filters.q }}" placeholder="Search title, summary, or body">
-        </label>
-        <label>Note Kind
-            <input name="note_kind" type="text" value="{{ active_filters.note_kind }}" list="note-kinds">
-            <datalist id="note-kinds">
-                {% for value in filter_options.note_kinds %}
-                <option value="{{ value }}"></option>
-                {% endfor %}
-            </datalist>
         </label>
         <label>Topic
             <input name="topic" type="text" value="{{ active_filters.topic }}" list="topics">
@@ -74,7 +66,6 @@
     <article class="panel note-card{% if view_mode == 'row' %} note-card-row{% endif %}">
         <div class="panel-head">
             <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
-            {% if note.metadata.note_kind %}<span class="pill">{{ note.metadata.note_kind }}</span>{% endif %}
         </div>
         {% set topics = note.metadata.topics | sort %}
         {% set tags = note.metadata.tags | sort %}
@@ -133,8 +124,7 @@
             <a href="/notes/{{ note.slug }}" class="ghost-link note-preview-link">Continue reading</a>
         </div>
         <div class="meta-row">
-            <span>Status: {{ note.metadata.status }}</span>
-            <span>AI: {{ "yes" if note.metadata.ai_assisted else "no" }}</span>
+            <span>Updated: {{ note.metadata.updated }}</span>
         </div>
     </article>
     {% endfor %}

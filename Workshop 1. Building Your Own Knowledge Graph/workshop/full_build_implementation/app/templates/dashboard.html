@@ -3,7 +3,7 @@
 <section class="hero">
     <div>
         <p class="eyebrow">Stats</p>
-        <h2>Corpus totals, note status, and recent activity.</h2>
+        <h2>Corpus totals and recent activity.</h2>
         <p>This page summarizes the current knowledge base and AI provenance activity.</p>
     </div>
     <div class="status-card">
@@ -15,27 +15,6 @@
     <article class="metric-card"><span>Notes</span><strong>{{ summary.total_notes }}</strong></article>
     <article class="metric-card"><span>Sources</span><strong>{{ summary.total_sources }}</strong></article>
     <article class="metric-card"><span>Logs</span><strong>{{ summary.total_logs }}</strong></article>
-</section>
-<section class="grid two-up">
-    <article class="panel">
-        <h3>Special Note Kinds</h3>
-        <ul class="clean-list">
-            {% for key, value in summary.note_kind_counts.items() %}
-            <li><span>{{ key }}</span><strong>{{ value }}</strong></li>
-            {% endfor %}
-            {% if not summary.note_kind_counts %}
-            <li><span>none yet</span><strong>0</strong></li>
-            {% endif %}
-        </ul>
-    </article>
-    <article class="panel">
-        <h3>Note Status</h3>
-        <ul class="clean-list">
-            {% for key, value in summary.note_status_counts.items() %}
-            <li><span>{{ key }}</span><strong>{{ value }}</strong></li>
-            {% endfor %}
-        </ul>
-    </article>
 </section>
 <section class="grid two-up">
     <article class="panel">

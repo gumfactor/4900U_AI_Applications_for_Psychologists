@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-    <div><p class="eyebrow">{{ note.metadata.note_kind or "note" }}</p><h2>{{ note.metadata.title }}</h2></div>
+    <div><h2>{{ note.metadata.title }}</h2></div>
     <div class="page-header-actions">
         <div class="status-card">
-            <strong>Status</strong>
-            <p>{{ note.metadata.status }}</p>
-            <p>Human reviewed: {{ "yes" if note.metadata.human_reviewed else "no" }}</p>
-            <p>AI-assisted: {{ "yes" if note.metadata.ai_assisted else "no" }}</p>
+            <strong>AI Activity</strong>
+            <p>Related AI logs: {{ related_logs | length }}</p>
         </div>
         <a href="/notes/{{ note.slug }}/edit" class="ghost-link">Edit Note</a>
     </div>
@@ -23,7 +21,6 @@
         <h3>Metadata</h3>
         <ul class="clean-list">
             <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
-            <li><span>Note Kind</span><strong>{{ note.metadata.note_kind or "n/a" }}</strong></li>
             <li><span>Created</span><strong>{{ note.metadata.created }}</strong></li>
             <li><span>Updated</span><strong>{{ note.metadata.updated }}</strong></li>
             <li><span>Tags</span><strong>{{ note.metadata.tags | join(", ") }}</strong></li>
@@ -43,10 +40,8 @@
 </section>
 <section class="grid two-up">
     <article class="panel">
-        <h3>Provenance</h3>
+        <h3>AI Activity</h3>
         <ul class="clean-list">
-            <li><span>AI-assisted</span><strong>{{ "yes" if note.metadata.ai_assisted else "no" }}</strong></li>
-            <li><span>Human reviewed</span><strong>{{ "yes" if note.metadata.human_reviewed else "no" }}</strong></li>
             <li><span>Related AI logs</span><strong>{{ related_logs | length }}</strong></li>
         </ul>
         {% if related_logs %}
@@ -61,9 +56,9 @@
         {% endif %}
     </article>
     <article class="panel">
-        <h3>Review Guidance</h3>
-        <p>Use the edit screen to correct metadata, tighten summaries, and mark the note as human reviewed once the content is trustworthy.</p>
-        <p>If AI assisted the note, review linked logs to see how the draft or metadata was generated.</p>
+        <h3>Editing Guidance</h3>
+        <p>Use the edit screen to correct metadata, tighten summaries, and keep the note structurally clean.</p>
+        <p>Linked AI logs show how metadata or draft content was generated without treating notes as a separate AI-only class.</p>
     </article>
 </section>
 <section class="grid two-up">

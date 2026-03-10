@@ -17,7 +17,6 @@ from app.models import (
     InferMetadataResponse,
     SaveDraftRequest,
     UpdateNoteRequest,
-    UpdateNoteStatusRequest,
 )
 from app.services.ai_service import AiService
 from app.services.gemini_client import GeminiClient
@@ -51,7 +50,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     def root_notes_page(
         request: Request,
         q: str | None = None,
-        note_kind: str | None = None,
         topic: str | None = None,
         tag: str | None = None,
         person: str | None = None,
@@ -65,7 +63,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             note_repository=note_repository,
             settings=settings,
             q=q,
-            note_kind=note_kind,
             topic=topic,
             tag=tag,
             person=person,
@@ -93,7 +90,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     def notes_page(
         request: Request,
         q: str | None = None,
-        note_kind: str | None = None,
         topic: str | None = None,
         tag: str | None = None,
         person: str | None = None,
@@ -107,7 +103,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             note_repository=note_repository,
             settings=settings,
             q=q,
-            note_kind=note_kind,
             topic=topic,
             tag=tag,
             person=person,
@@ -291,7 +286,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 notes="Metadata preview generated during note creation.",
             )
         return InferMetadataResponse(
-            note_kind=inferred_metadata["note_kind"],
             topics=list(inferred_metadata["topics"]),
             people=list(inferred_metadata["people"]),
             sources=list(inferred_metadata["sources"]),
@@ -315,7 +309,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         except (RuntimeError, ValueError):
             inferred_metadata = None
         if inferred_metadata:
-            note_kind = request_body.note_kind or inferred_metadata["note_kind"]
             topics = _merge_metadata_lists(request_body.topics, inferred_metadata["topics"])
             people = _merge_metadata_lists(request_body.people, inferred_metadata["people"])
             sources = _merge_metadata_lists(request_body.sources, inferred_metadata["sources"])
@@ -324,7 +317,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
             used_ai_metadata = bool(inferred_metadata.get("model"))
         else:
-            note_kind = request_body.note_kind
             topics = request_body.topics
             people = request_body.people
             sources = request_body.sources
@@ -334,7 +326,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             used_ai_metadata = False
         note = note_repository.save_draft(
             title=request_body.title,
-            note_kind=note_kind,
             topics=topics,
             people=people,
             sources=sources,
@@ -342,7 +333,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             source_refs=source_refs,
             tags=tags,
             content=request_body.content,
-            ai_assisted=request_body.ai_assisted or used_ai_metadata,
         )
         if inferred_metadata and used_ai_metadata:
             log_service.write_log(
@@ -365,21 +355,12 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         )
         return note.model_dump()
 
-    @app.post("/api/notes/{slug}/status")
-    def update_note_status(slug: str, request_body: UpdateNoteStatusRequest) -> dict:
-        try:
-            note = note_repository.update_status(slug, request_body.status, request_body.human_reviewed)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        return note.model_dump()
-
     @app.put("/api/notes/{slug}")
     def update_note(slug: str, request_body: UpdateNoteRequest) -> dict:
         try:
             note = note_repository.update_note(
                 slug=slug,
                 title=request_body.title,
-                note_kind=request_body.note_kind,
                 topics=request_body.topics,
                 people=request_body.people,
                 sources=request_body.sources,
@@ -387,9 +368,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 source_refs=request_body.source_refs,
                 tags=request_body.tags,
                 content=request_body.content,
-                status=request_body.status,
-                ai_assisted=request_body.ai_assisted,
-                human_reviewed=request_body.human_reviewed,
             )
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -429,8 +407,6 @@ def _build_dashboard_summary(
         total_notes=len(notes),
         total_sources=len(sources),
         total_logs=len(logs),
-        note_kind_counts=dict(Counter(note.metadata.note_kind for note in notes if note.metadata.note_kind)),
-        note_status_counts=dict(Counter(note.metadata.status for note in notes)),
         ai_enabled=settings.ai_enabled,
     )
 
@@ -441,7 +417,6 @@ def _render_notes_page(
     note_repository: NoteRepository,
     settings: Settings,
     q: str | None = None,
-    note_kind: str | None = None,
     topic: str | None = None,
     tag: str | None = None,
     person: str | None = None,
@@ -461,8 +436,6 @@ def _render_notes_page(
             or search in note.summary.lower()
             or search in note.raw_body.lower()
         ]
-    if note_kind:
-        notes = [note for note in notes if note.metadata.note_kind == note_kind]
     if topic:
         notes = [note for note in notes if topic in note.metadata.topics]
     if tag:
@@ -484,7 +457,6 @@ def _render_notes_page(
             "view_mode": view_mode,
             "build_explore_href": _build_explore_href,
             "active_filters": {
-                "note_kind": note_kind or "",
                 "q": q or "",
                 "topic": topic or "",
                 "tag": tag or "",
@@ -510,14 +482,12 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
 
 
 def _build_filter_options(notes: list) -> dict[str, list[str]]:
-    note_kinds = sorted({note.metadata.note_kind for note in notes if note.metadata.note_kind}, key=str.casefold)
     topics = _collect_sorted_values(notes, "topics")
     tags = _collect_sorted_values(notes, "tags")
     people = _collect_sorted_values(notes, "people")
     sources = _collect_sorted_values(notes, "sources")
     projects = _collect_sorted_values(notes, "projects")
     return {
-        "note_kinds": note_kinds,
         "topics": topics,
         "tags": tags,
         "people": people,

@@ -35,15 +35,6 @@
             <p class="muted-text">On save, AI infers note attributes from the generated draft and stores the note in one action.</p>
             <form id="source-save-form" class="note-form">
                 <label>Title <input name="title" type="text" required value="{{ source.title }}"></label>
-                <label>Note Kind
-                    <select name="note_kind">
-                        <option value="" selected>Select note kind (optional)</option>
-                        <option value="synthesis">synthesis</option>
-                        <option value="reflection">reflection</option>
-                        <option value="method-note">method-note</option>
-                        <option value="brainstorming">brainstorming</option>
-                    </select>
-                </label>
                 <label>Topics <input name="topics" type="text" placeholder="Optional override"></label>
                 <label>People <input name="people" type="text" placeholder="Optional override"></label>
                 <label>Sources <input name="sources" type="text" placeholder="Optional override"></label>
@@ -73,15 +64,13 @@ function splitCsv(value) {
 async function saveDraft(formData) {
   const payload = {
     title: formData.get("title"),
-    note_kind: formData.get("note_kind") || null,
     topics: splitCsv(formData.get("topics")),
     people: splitCsv(formData.get("people")),
     sources: splitCsv(formData.get("sources")),
     projects: splitCsv(formData.get("projects")),
     tags: splitCsv(formData.get("tags")),
     source_refs: splitCsv(formData.get("source_refs")),
-    content: latestSourceOutput,
-    ai_assisted: true
+    content: latestSourceOutput
   };
   const response = await fetch("/api/notes/save-draft", {
     method: "POST",

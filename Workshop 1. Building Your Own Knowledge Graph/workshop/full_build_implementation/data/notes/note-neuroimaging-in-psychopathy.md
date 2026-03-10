@@ -1,7 +1,6 @@
 ---
 id: note-neuroimaging-in-psychopathy
 title: Neuroimaging in Psychopathy
-status: ai-drafted
 topics:
 - Psychopathy and Neuroscience
 - Amygdala in Psychopathy
@@ -23,8 +22,6 @@ tags:
 source_refs: []
 created: '2026-03-09'
 updated: '2026-03-09'
-ai_assisted: true
-human_reviewed: false
 ---
 
 # Neuroimaging in Psychopathy
@@ -60,3 +57,4 @@ In conclusion, neuroscience has provided valuable insight into the brain mechani
 ## Open Questions
 
 - What still needs to be checked?
+

@@ -12,7 +12,6 @@ from app.models import NoteLink, NoteMetadata
 LINK_PATTERN = re.compile(r"-\s*`(?P<relationship>[^`]+)`:\s*\[(?P<title>[^\]]+)\]\((?P<target>[^)]+)\)")
 SECTION_PATTERN = re.compile(r"^## (?P<name>.+)$", re.MULTILINE)
 
-
 def slugify(value: str) -> str:
     normalized = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return normalized or "untitled-note"
@@ -23,6 +22,7 @@ def today_iso() -> str:
 
 
 def parse_frontmatter(markdown_text: str) -> tuple[dict[str, Any], str]:
+    markdown_text = markdown_text.lstrip("\ufeff")
     if not markdown_text.startswith("---\n"):
         raise ValueError("Markdown file is missing YAML frontmatter.")
     try:
@@ -75,6 +75,9 @@ def extract_links(linked_notes_markdown: str) -> list[NoteLink]:
 
 def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     normalized = dict(frontmatter)
+    normalized.pop("status", None)
+    normalized.pop("ai_assisted", None)
+    normalized.pop("human_reviewed", None)
     for key in ("created", "updated"):
         if key in normalized and normalized[key] is not None:
             normalized[key] = str(normalized[key])
@@ -88,8 +91,7 @@ def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     normalized.setdefault("source_refs", [])
     if legacy_topic:
         normalized["topics"] = [str(legacy_topic), *normalized["topics"]]
-    if "note_kind" not in normalized:
-        normalized["note_kind"] = None
+    normalized.pop("note_kind", None)
     title = str(normalized.get("title", "")).strip()
     legacy_concepts = normalized.pop("concepts", [])
     if legacy_concepts:
@@ -143,7 +145,6 @@ def ensure_note_body_structure(content: str) -> str:
 
 def build_note_markdown(
     title: str,
-    note_kind: str | None,
     topics: list[str],
     people: list[str],
     sources: list[str],
@@ -151,13 +152,11 @@ def build_note_markdown(
     source_refs: list[str],
     tags: list[str],
     content: str,
-    ai_assisted: bool,
 ) -> tuple[str, str]:
     slug = slugify(title)
     metadata = {
         "id": f"note-{slug}",
         "title": title,
-        "status": "ai-drafted" if ai_assisted else "captured",
         "topics": topics,
         "people": people,
         "sources": sources,
@@ -166,11 +165,7 @@ def build_note_markdown(
         "source_refs": source_refs,
         "created": today_iso(),
         "updated": today_iso(),
-        "ai_assisted": ai_assisted,
-        "human_reviewed": False,
     }
-    if note_kind:
-        metadata["note_kind"] = note_kind
     markdown = build_note_document(title, metadata, content)
     return f"note-{slug}.md", markdown
 

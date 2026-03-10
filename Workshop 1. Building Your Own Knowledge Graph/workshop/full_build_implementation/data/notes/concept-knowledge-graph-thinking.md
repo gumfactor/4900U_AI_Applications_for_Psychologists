@@ -1,7 +1,6 @@
 ---
 id: concept-knowledge-graph-thinking
 title: Knowledge Graph Thinking
-status: reviewed
 topics:
   - knowledge graphs
   - personal knowledge bases
@@ -20,8 +19,6 @@ source_refs:
   - data/sources/source-pkb-design-principles.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: true
-human_reviewed: true
 ---
 
 # Knowledge Graph Thinking
@@ -49,3 +46,4 @@ A note collection behaves like a small knowledge graph when each note records me
 ## Open Questions
 
 - How many relationship labels can beginners use reliably before the system becomes inconsistent?
+

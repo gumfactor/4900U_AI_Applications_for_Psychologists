@@ -11,7 +11,6 @@ def test_note_repository_loads_seeded_notes() -> None:
     notes = repository.list_notes()
     assert len(notes) >= 7
     assert any(note.metadata.title == "Instructor Demo System" for note in notes)
-    assert any(note.metadata.note_kind is None for note in notes)
 
 
 def test_note_repository_extracts_links() -> None:
@@ -37,7 +36,6 @@ def test_seeded_notes_use_refactored_schema() -> None:
 def test_ai_service_parses_metadata_yaml_output() -> None:
     parsed = AiService._parse_metadata_yaml(
         """```yaml
-note_kind: method-note
 topics:
   - Knowledge Bases
 people:
@@ -53,7 +51,6 @@ source_refs:
   - data/sources/example.md
 ```"""
     )
-    assert parsed["note_kind"] == "method-note"
     assert parsed["topics"] == ["Knowledge Bases"]
     assert parsed["people"] == ["Ada Lovelace"]
     assert parsed["source_refs"] == ["data/sources/example.md"]
@@ -61,8 +58,7 @@ source_refs:
 
 def test_ai_service_parses_relaxed_metadata_output() -> None:
     parsed = AiService._parse_metadata_yaml(
-        """note_kind: brainstorming
-topics:
+        """topics:
 - Knowledge Bases
 people:
 - Ada Lovelace
@@ -76,7 +72,6 @@ source_refs:
 - data/sources/example.md
 """
     )
-    assert parsed["note_kind"] == "brainstorming"
     assert parsed["topics"] == ["Knowledge Bases"]
     assert parsed["projects"] == ["Demo Project"]
 
@@ -90,7 +85,6 @@ def test_note_repository_updates_existing_note() -> None:
     updated = repository.update_note(
         slug="concept-personal-knowledge-base",
         title="Updated PKB Note",
-        note_kind="reflection",
         topics=["Knowledge Work"],
         people=["Workshop Instructor"],
         sources=["PKB Design Principles"],
@@ -98,11 +92,5 @@ def test_note_repository_updates_existing_note() -> None:
         source_refs=["data/sources/source-pkb-design-principles.md"],
         tags=["updated"],
         content="Updated content for the repository test.",
-        status="reviewed",
-        ai_assisted=True,
-        human_reviewed=True,
     )
     assert updated.metadata.title == "Updated PKB Note"
-    assert updated.metadata.note_kind == "reflection"
-    assert updated.metadata.status == "reviewed"
-    assert updated.metadata.human_reviewed is True

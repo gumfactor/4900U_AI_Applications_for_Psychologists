@@ -5,7 +5,6 @@ def test_parse_frontmatter_and_sections() -> None:
     markdown = """---
 id: concept-example
 title: Example
-status: captured
 topics:
   - testing
 people: []
@@ -17,8 +16,6 @@ source_refs:
   - data/source.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: false
-human_reviewed: false
 ---
 
 # Example
@@ -41,7 +38,6 @@ Summary text.
 def test_build_note_markdown_includes_required_sections() -> None:
     filename, markdown = build_note_markdown(
         title="Demo Note",
-        note_kind="synthesis",
         topics=["Knowledge Work"],
         people=["Ada Lovelace"],
         sources=["Demo Source"],
@@ -49,10 +45,8 @@ def test_build_note_markdown_includes_required_sections() -> None:
         source_refs=["data/sources/example.md"],
         tags=["demo"],
         content="This is generated text.",
-        ai_assisted=True,
     )
     assert filename == "note-demo-note.md"
-    assert "note_kind: synthesis" in markdown
     assert "- Knowledge Work" in markdown
     assert "## Summary" in markdown
     assert "## Open Questions" in markdown
@@ -65,15 +59,11 @@ def test_validate_metadata_supports_legacy_type_and_topic() -> None:
             "title": "Legacy Concept",
             "type": "concept",
             "topic": "Legacy Topic",
-            "status": "captured",
             "tags": ["legacy"],
             "source_refs": [],
             "created": "2026-03-08",
             "updated": "2026-03-08",
-            "ai_assisted": False,
-            "human_reviewed": False,
         }
     )
-    assert metadata.note_kind is None
     assert metadata.topics == ["Legacy Topic"]
     assert metadata.tags[0] == "Legacy Concept"

@@ -1,7 +1,6 @@
 ---
 id: concept-ai-review-discipline
 title: AI Review Discipline
-status: final
 topics:
   - ai-assisted learning
   - review workflows
@@ -20,21 +19,19 @@ source_refs:
   - data/sources/source-ai-review-discipline.md
 created: 2026-03-08
 updated: 2026-03-08
-ai_assisted: true
-human_reviewed: true
 ---
 
 # AI Review Discipline
 
 ## Summary
 
-AI review discipline is the practice of treating model output as a draft that must be checked, edited, and explicitly marked as reviewed before it becomes trusted knowledge.
+AI editing discipline means using AI as a normal part of note creation while still tightening structure, correcting claims, and deciding when a note should remain a draft or move to final.
 
 ## Key Points
 
-- AI output should not be treated as final by default.
-- Human review protects quality and trust.
-- Status labels make draft maturity visible.
+- AI can be a default authoring aid without creating a separate class of notes.
+- Quality comes from iterative editing, good sources, and clear note structure.
+- A simple draft-to-final status is enough for most workshop notes.
 
 ## Linked Notes
 
@@ -48,4 +45,5 @@ AI review discipline is the practice of treating model output as a draft that mu
 
 ## Open Questions
 
-- Which review steps are essential in a live classroom demo?
+- Which editing steps are essential in a live classroom demo?
+

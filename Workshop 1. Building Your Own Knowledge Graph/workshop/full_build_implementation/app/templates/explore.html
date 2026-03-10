@@ -30,7 +30,6 @@
     <article class="panel note-card note-card-row">
         <div class="panel-head">
             <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
-            {% if note.metadata.note_kind %}<span class="pill">{{ note.metadata.note_kind }}</span>{% endif %}
         </div>
         <p class="attribute-chip-group">
             {% for topic in note.metadata.topics %}<a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip">topic: {{ topic }}</a>{% endfor %}

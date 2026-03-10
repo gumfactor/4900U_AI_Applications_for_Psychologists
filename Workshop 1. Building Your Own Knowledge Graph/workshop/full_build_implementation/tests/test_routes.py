@@ -24,6 +24,27 @@ tags:
   - demo
 source_refs: []
 """
+        if "User note body:" in prompt:
+            return """## Summary
+
+Synthetic structured summary.
+
+## Key Points
+
+- Point one
+- Point two
+
+## Linked Notes
+
+None yet.
+
+## Evidence / Sources
+
+- None cited yet
+
+## Open Questions
+
+- None yet"""
         return "## Summary\n\nSynthetic answer.\n\n## Key Points\n\n- Point one"
 
 
@@ -82,6 +103,48 @@ def test_ai_run_and_save_draft_routes() -> None:
     assert draft_response.json()["metadata"]["topics"] == ["Testing"]
     assert draft_response.json()["metadata"]["people"] == ["Test User"]
     assert "runtime" in draft_response.json()["metadata"]["tags"]
+
+
+def test_save_draft_structures_plain_note_body_with_ai() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Plain Note",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": [],
+            "content": "This is a plain paragraph the user typed into New Note.",
+        },
+    )
+    assert response.status_code == 200
+    note_response = client.get(f"/api/notes/{response.json()['slug']}")
+    assert note_response.status_code == 200
+    assert note_response.json()["key_points"] == ["Point one", "Point two"]
+
+
+def test_save_draft_keeps_existing_structured_key_points() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Structured Note",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": [],
+            "content": "## Summary\n\nUser summary.\n\n## Key Points\n\n- User point\n\n## Linked Notes\n\nNone yet.\n\n## Evidence / Sources\n\n- None cited yet\n\n## Open Questions\n\n- None yet",
+        },
+    )
+    assert response.status_code == 200
+    note_response = client.get(f"/api/notes/{response.json()['slug']}")
+    assert note_response.status_code == 200
+    assert note_response.json()["key_points"] == ["User point"]
 
 
 def test_save_draft_accepts_file_attachments() -> None:
@@ -269,7 +332,7 @@ def test_note_detail_preserves_navigation_context() -> None:
     assert "Related Notes" in response.text
 
 
-def test_note_detail_replaces_placeholder_scaffolding_with_review_callouts() -> None:
+def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> None:
     client = build_test_client()
     draft_response = client.post(
         "/api/notes/save-draft",
@@ -287,9 +350,9 @@ def test_note_detail_replaces_placeholder_scaffolding_with_review_callouts() -> 
     assert draft_response.status_code == 200
     detail_response = client.get(f"/notes/{draft_response.json()['slug']}")
     assert detail_response.status_code == 200
-    assert "Key Points" not in detail_response.text
-    assert "Evidence / Sources" not in detail_response.text
-    assert "Open Questions" not in detail_response.text
+    assert "Key Points" in detail_response.text
+    assert "Point one" in detail_response.text
+    assert "Evidence / Sources" in detail_response.text
     assert "Needs manual editing" not in detail_response.text
 
 

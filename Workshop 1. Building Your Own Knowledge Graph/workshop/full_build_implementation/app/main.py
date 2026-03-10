@@ -29,6 +29,7 @@ from app.services.note_history_service import NoteHistoryService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
 from app.services.source_repository import SourceRepository
+from app.services.markdown_utils import split_sections
 
 
 def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None = None) -> FastAPI:
@@ -346,11 +347,22 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     @app.post("/api/notes/save-draft")
     def save_draft(request_body: SaveDraftRequest) -> dict:
+        structured_content = request_body.content
+        structured_note = None
+        if not split_sections(request_body.content):
+            try:
+                structured_note = ai_service.structure_note_body(
+                    title=request_body.title,
+                    content=request_body.content,
+                )
+                structured_content = str(structured_note["content"])
+            except (RuntimeError, ValueError):
+                structured_note = None
         inferred_metadata = None
         try:
             inferred_metadata = ai_service.infer_note_metadata(
                 title=request_body.title,
-                content=request_body.content,
+                content=structured_content,
                 source_refs=request_body.source_refs,
             )
         except (RuntimeError, ValueError):
@@ -386,9 +398,19 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             source_refs=source_refs,
             attachments=attachments,
             tags=tags,
-            content=request_body.content,
+            content=structured_content,
         )
         note_history_service.record_version(note, action="created")
+        if structured_note and structured_note.get("model"):
+            log_service.write_log(
+                task="note_body_structuring",
+                prompt_slug=str(structured_note["prompt_slug"]),
+                model=str(structured_note["model"]),
+                input_files=[],
+                output_target=note.path,
+                review_outcome="pending-review",
+                notes="Note body structured during note creation.",
+            )
         if inferred_metadata and used_ai_metadata:
             log_service.write_log(
                 task="metadata_extraction",

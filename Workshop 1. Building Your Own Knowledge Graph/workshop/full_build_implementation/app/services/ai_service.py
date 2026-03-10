@@ -19,6 +19,7 @@ class AiService:
         "related_note_suggestion": "03-related-note-suggestion",
         "question_answering": "04-question-answering",
     }
+    NOTE_BODY_PROMPT = "05-note-body-structuring"
 
     def __init__(
         self,
@@ -141,6 +142,42 @@ class AiService:
         parsed["raw_output"] = raw_output
         parsed["input_paths"] = source_refs or []
         return parsed
+
+    def structure_note_body(
+        self,
+        title: str,
+        content: str,
+        model: str | None = None,
+    ) -> dict[str, object]:
+        if not self.gemini_client:
+            return {
+                "content": content,
+                "model": None,
+                "prompt_slug": self.NOTE_BODY_PROMPT,
+                "raw_output": "",
+                "input_paths": [],
+            }
+
+        prompt_template = self.prompt_repository.get_prompt(self.NOTE_BODY_PROMPT)
+        selected_model = model or self.default_model
+        prompt_text = "\n\n".join(
+            [
+                prompt_template.content.strip(),
+                "",
+                f"Title: {title.strip()}",
+                "",
+                "User note body:",
+                content.strip(),
+            ]
+        ).strip()
+        raw_output = self.gemini_client.generate(prompt_text, selected_model).strip()
+        return {
+            "content": raw_output or content,
+            "model": selected_model,
+            "prompt_slug": self.NOTE_BODY_PROMPT,
+            "raw_output": raw_output,
+            "input_paths": [],
+        }
 
     def _load_selected_notes(self, slugs: list[str]) -> list[Note]:
         if len(slugs) < 2 or len(slugs) > 5:

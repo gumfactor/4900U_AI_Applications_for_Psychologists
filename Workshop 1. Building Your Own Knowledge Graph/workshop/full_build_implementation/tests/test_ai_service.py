@@ -15,6 +15,27 @@ class FakeGeminiClient:
 
     def generate(self, prompt: str, model: str) -> str:
         self.last_prompt = prompt
+        if "User note body:" in prompt:
+            return """## Summary
+
+Mocked structured summary.
+
+## Key Points
+
+- Structured point one
+- Structured point two
+
+## Linked Notes
+
+None yet.
+
+## Evidence / Sources
+
+- None cited yet
+
+## Open Questions
+
+- None yet"""
         return "## Summary\n\nMocked output.\n\n## Key Points\n\n- Mocked"
 
 
@@ -63,3 +84,21 @@ def test_ai_service_question_answering_requires_question() -> None:
         assert "question" in str(exc)
     else:
         raise AssertionError("Expected question_answering to require a question.")
+
+
+def test_ai_service_structures_note_body() -> None:
+    base_dir = Path(__file__).resolve().parent.parent
+    fake_client = FakeGeminiClient()
+    service = AiService(
+        NoteRepository(base_dir / "data" / "notes"),
+        SourceRepository(base_dir / "data" / "sources"),
+        PromptRepository(base_dir / "data" / "prompts"),
+        LogService(build_logs_dir(base_dir, "ai-service-structure")),
+        fake_client,
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash",
+    )
+    result = service.structure_note_body("My note", "A plain paragraph from the user.")
+    assert "User note body:" in fake_client.last_prompt
+    assert "## Key Points" in str(result["content"])
+    assert result["prompt_slug"] == "05-note-body-structuring"

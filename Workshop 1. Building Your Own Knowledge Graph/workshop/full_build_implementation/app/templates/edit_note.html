@@ -33,6 +33,12 @@
         <label>Source References
             <input name="source_refs" type="text" value="{{ note.metadata.source_refs | join(', ') }}">
         </label>
+        <label>Attachment References
+            <input name="attachments" type="text" value="{{ note.metadata.attachments | join(', ') }}">
+        </label>
+        <label>Add Attachments
+            <input name="files" type="file" multiple>
+        </label>
         <label>Main Body
             <textarea name="content" rows="20" required>{{ note.raw_body }}</textarea>
         </label>
@@ -50,6 +56,19 @@ function splitCsv(value) {
   return (value || "").split(",").map((x) => x.trim()).filter(Boolean);
 }
 
+async function readAttachments(fileInput) {
+  const files = Array.from(fileInput?.files || []);
+  return Promise.all(files.map((file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      name: file.name,
+      content_base64: String(reader.result).split(",").pop()
+    });
+    reader.onerror = () => reject(reader.error || new Error("Could not read attachment."));
+    reader.readAsDataURL(file);
+  })));
+}
+
 editNoteForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(editNoteForm);
@@ -61,6 +80,8 @@ editNoteForm?.addEventListener("submit", async (event) => {
     projects: splitCsv(formData.get("projects")),
     tags: splitCsv(formData.get("tags")),
     source_refs: splitCsv(formData.get("source_refs")),
+    attachments: splitCsv(formData.get("attachments")),
+    attachment_uploads: await readAttachments(editNoteForm.querySelector('input[name="files"]')),
     content: formData.get("content") || ""
   };
   const response = await fetch("/api/notes/{{ note.slug }}", {

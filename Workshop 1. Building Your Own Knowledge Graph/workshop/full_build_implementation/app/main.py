@@ -22,6 +22,7 @@ from app.models import (
     UpdateNoteRequest,
 )
 from app.services.ai_service import AiService
+from app.services.attachment_service import AttachmentService
 from app.services.gemini_client import GeminiClient
 from app.services.log_service import LogService
 from app.services.note_history_service import NoteHistoryService
@@ -35,6 +36,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
     note_repository = NoteRepository(settings.notes_dir)
     source_repository = SourceRepository(settings.sources_dir)
     prompt_repository = PromptRepository(settings.prompts_dir)
+    attachment_service = AttachmentService(settings.attachments_dir)
     log_service = LogService(settings.logs_dir)
     note_history_service = NoteHistoryService(settings.history_dir, settings.notes_dir)
     ai_service = AiService(
@@ -49,6 +51,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     app = FastAPI(title="Instructor PKB Demo")
     app.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
+    app.mount("/attachments", StaticFiles(directory=settings.attachments_dir), name="attachments")
     templates = Jinja2Templates(directory=str(settings.templates_dir))
 
     @app.get("/", response_class=HTMLResponse)
@@ -129,6 +132,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             "note_detail.html",
             {
                 "note": note,
+                "attachment_links": _build_attachment_links(note.metadata.attachments, attachment_service),
                 "version_history": version_history,
                 "related_notes": related_notes,
                 "return_to": _safe_return_to(return_to),
@@ -354,6 +358,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             projects = _merge_metadata_lists(request_body.projects, inferred_metadata["projects"])
             tags = _merge_metadata_lists(request_body.tags, inferred_metadata["tags"])
             source_refs = _merge_metadata_lists(request_body.source_refs, inferred_metadata["source_refs"])
+            attachments = request_body.attachments
             used_ai_metadata = bool(inferred_metadata.get("model"))
         else:
             topics = request_body.topics
@@ -362,7 +367,12 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             projects = request_body.projects
             tags = request_body.tags
             source_refs = request_body.source_refs
+            attachments = request_body.attachments
             used_ai_metadata = False
+        attachments = _merge_metadata_lists(
+            attachments,
+            attachment_service.save_uploads(_note_slug_from_title(request_body.title), request_body.attachment_uploads),
+        )
         note = note_repository.save_draft(
             title=request_body.title,
             topics=topics,
@@ -370,6 +380,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             sources=sources,
             projects=projects,
             source_refs=source_refs,
+            attachments=attachments,
             tags=tags,
             content=request_body.content,
         )
@@ -401,6 +412,10 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             existing_note = note_repository.get_note(slug)
             if not note_history_service.list_versions(slug):
                 note_history_service.record_version(existing_note, action="imported")
+            attachments = _merge_metadata_lists(
+                request_body.attachments,
+                attachment_service.save_uploads(slug, request_body.attachment_uploads),
+            )
             note = note_repository.update_note(
                 slug=slug,
                 title=request_body.title,
@@ -409,6 +424,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 sources=request_body.sources,
                 projects=request_body.projects,
                 source_refs=request_body.source_refs,
+                attachments=attachments,
                 tags=request_body.tags,
                 content=request_body.content,
             )
@@ -530,6 +546,20 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
         merged.append(cleaned)
     return merged
 
+
+def _note_slug_from_title(title: str) -> str:
+    return f"note-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-') or 'untitled-note'}"
+
+
+def _build_attachment_links(attachment_paths: list[str], attachment_service: AttachmentService) -> list[dict[str, str]]:
+    return [
+        {
+            "label": attachment_service.display_name(path),
+            "path": path,
+            "href": attachment_service.build_link(path),
+        }
+        for path in attachment_paths
+    ]
 
 
 def _build_note_preview(text: str) -> str:
@@ -662,6 +692,7 @@ def _summarize_version_change(previous_version, current_version) -> list[str]:
         ("people", "people"),
         ("sources", "sources"),
         ("projects", "projects"),
+        ("attachments", "attachments"),
     ):
         attribute_change = _summarize_list_change(
             getattr(previous_note.metadata, attribute_name),

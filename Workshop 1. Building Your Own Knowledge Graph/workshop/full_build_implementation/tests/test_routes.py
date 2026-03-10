@@ -79,6 +79,34 @@ def test_ai_run_and_save_draft_routes() -> None:
     assert "runtime" in draft_response.json()["metadata"]["tags"]
 
 
+def test_save_draft_accepts_file_attachments() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Attachment Draft",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "attachments": [],
+            "attachment_uploads": [{"name": "reading.pdf", "content_base64": "cGRmLWJ5dGVz"}],
+            "tags": [],
+            "content": "Attachment-backed note body.",
+        },
+    )
+    assert response.status_code == 200
+    attachment_paths = response.json()["metadata"]["attachments"]
+    assert len(attachment_paths) == 1
+    assert attachment_paths[0].endswith("/reading.pdf")
+    detail_response = client.get(f"/notes/{response.json()['slug']}")
+    assert "reading.pdf" in detail_response.text
+    attachment_response = client.get("/attachments/note-attachment-draft/reading.pdf")
+    assert attachment_response.status_code == 200
+    assert attachment_response.content == b"pdf-bytes"
+
+
 def test_infer_metadata_route() -> None:
     client = build_test_client()
     response = client.post(
@@ -113,6 +141,42 @@ def test_edit_note_routes() -> None:
     )
     assert update_response.status_code == 200
     assert update_response.json()["metadata"]["title"] == "Edited PKB Note"
+
+
+def test_edit_note_route_merges_existing_and_new_attachments() -> None:
+    client = build_test_client()
+    created = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Editable Attachments",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "attachments": [],
+            "tags": [],
+            "content": "Initial content.",
+        },
+    )
+    assert created.status_code == 200
+    updated = client.put(
+        f"/api/notes/{created.json()['slug']}",
+        json={
+            "title": "Editable Attachments",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "attachments": created.json()["metadata"]["attachments"],
+            "attachment_uploads": [{"name": "appendix.txt", "content_base64": "bm90ZXM="}],
+            "tags": [],
+            "content": "Updated content.",
+        },
+    )
+    assert updated.status_code == 200
+    assert updated.json()["metadata"]["attachments"][0].endswith("/appendix.txt")
 
 
 def test_explore_route() -> None:

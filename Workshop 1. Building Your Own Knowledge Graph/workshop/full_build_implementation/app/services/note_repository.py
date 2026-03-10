@@ -37,6 +37,7 @@ class NoteRepository:
         sources: list[str],
         projects: list[str],
         source_refs: list[str],
+        attachments: list[str],
         tags: list[str],
         content: str,
     ) -> Note:
@@ -47,6 +48,7 @@ class NoteRepository:
             sources,
             projects,
             source_refs,
+            attachments,
             tags,
             content,
         )
@@ -63,6 +65,7 @@ class NoteRepository:
         sources: list[str],
         projects: list[str],
         source_refs: list[str],
+        attachments: list[str],
         tags: list[str],
         content: str,
     ) -> Note:
@@ -77,6 +80,7 @@ class NoteRepository:
             "projects": projects,
             "tags": tags,
             "source_refs": source_refs,
+            "attachments": attachments,
             "created": note.metadata.created,
             "updated": today_iso(),
         }

@@ -18,6 +18,7 @@ class NoteMetadata(BaseModel):
     projects: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
     created: str
     updated: str
 
@@ -39,6 +40,11 @@ class Note(BaseModel):
     open_questions: list[str] = Field(default_factory=list)
     linked_notes_markdown: str = ""
     links: list[NoteLink] = Field(default_factory=list)
+
+
+class AttachmentUpload(BaseModel):
+    name: str
+    content_base64: str
 
 
 class SourceDocument(BaseModel):
@@ -113,6 +119,8 @@ class SaveDraftRequest(BaseModel):
     sources: list[str] = Field(default_factory=list)
     projects: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
+    attachment_uploads: list[AttachmentUpload] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     content: str
 
@@ -142,6 +150,8 @@ class UpdateNoteRequest(BaseModel):
     sources: list[str] = Field(default_factory=list)
     projects: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
+    attachment_uploads: list[AttachmentUpload] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     content: str
 

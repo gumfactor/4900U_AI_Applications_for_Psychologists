@@ -90,6 +90,7 @@ def test_note_repository_updates_existing_note() -> None:
         sources=["PKB Design Principles"],
         projects=["Instructor Demo System"],
         source_refs=["data/sources/source-pkb-design-principles.md"],
+        attachments=["data/attachments/concept-personal-knowledge-base/example.pdf"],
         tags=["updated"],
         content="Updated content for the repository test.",
     )

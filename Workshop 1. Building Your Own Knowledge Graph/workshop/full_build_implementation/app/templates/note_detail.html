@@ -117,6 +117,22 @@
         </article>
 
         <article class="panel">
+            <h3>Attachments</h3>
+            {% if attachment_links %}
+            <ul class="link-list">
+                {% for attachment in attachment_links %}
+                <li>
+                    <a href="{{ attachment.href }}" target="_blank" rel="noreferrer">{{ attachment.label }}</a>
+                    <span class="muted-text">{{ attachment.path }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No files attached to this note yet.</p>
+            {% endif %}
+        </article>
+
+        <article class="panel">
             <h3>Version History</h3>
             {% if version_history %}
             <ul class="activity-list">
@@ -144,6 +160,7 @@
                 <ul class="clean-list">
                     <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
                     <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
+                    <li><span>Attachments</span><strong>{{ note.metadata.attachments | join(", ") or "n/a" }}</strong></li>
                 </ul>
             </details>
         </article>

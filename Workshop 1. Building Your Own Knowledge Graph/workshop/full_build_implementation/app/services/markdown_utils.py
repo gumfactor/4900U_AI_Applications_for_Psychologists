@@ -89,6 +89,7 @@ def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     normalized.setdefault("projects", [])
     normalized.setdefault("tags", [])
     normalized.setdefault("source_refs", [])
+    normalized.setdefault("attachments", [])
     if legacy_topic:
         normalized["topics"] = [str(legacy_topic), *normalized["topics"]]
     normalized.pop("note_kind", None)
@@ -150,6 +151,7 @@ def build_note_markdown(
     sources: list[str],
     projects: list[str],
     source_refs: list[str],
+    attachments: list[str],
     tags: list[str],
     content: str,
 ) -> tuple[str, str]:
@@ -163,6 +165,7 @@ def build_note_markdown(
         "projects": projects,
         "tags": tags,
         "source_refs": source_refs,
+        "attachments": attachments,
         "created": today_iso(),
         "updated": today_iso(),
     }

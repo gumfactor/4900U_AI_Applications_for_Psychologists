@@ -14,6 +14,7 @@ tags:
   - demo
 source_refs:
   - data/source.md
+attachments: []
 created: 2026-03-08
 updated: 2026-03-08
 ---
@@ -43,6 +44,7 @@ def test_build_note_markdown_includes_required_sections() -> None:
         sources=["Demo Source"],
         projects=["PKB Demo"],
         source_refs=["data/sources/example.md"],
+        attachments=["data/attachments/note-demo-note/example.pdf"],
         tags=["demo"],
         content="This is generated text.",
     )
@@ -61,6 +63,7 @@ def test_validate_metadata_supports_legacy_type_and_topic() -> None:
             "topic": "Legacy Topic",
             "tags": ["legacy"],
             "source_refs": [],
+            "attachments": [],
             "created": "2026-03-08",
             "updated": "2026-03-08",
         }

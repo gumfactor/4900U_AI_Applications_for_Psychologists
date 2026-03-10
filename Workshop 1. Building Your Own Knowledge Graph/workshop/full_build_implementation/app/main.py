@@ -602,7 +602,6 @@ def _related_notes_for(notes: list, current_note) -> list:
 def _build_draft_state(note) -> dict[str, object]:
     placeholder_key_points = {"Needs manual editing"}
     placeholder_evidence = {"Add supporting source"}
-    placeholder_questions = {"What still needs to be checked?"}
     visible_links = [
         link for link in note.links if link.title != "Add a linked note" and link.target != "./replace-linked-note.md"
     ]
@@ -611,7 +610,6 @@ def _build_draft_state(note) -> dict[str, object]:
         "summary_is_placeholder": summary == "Draft content pending review.",
         "key_points": [item for item in note.key_points if item not in placeholder_key_points],
         "evidence": [item for item in note.evidence if item not in placeholder_evidence],
-        "open_questions": [item for item in note.open_questions if item not in placeholder_questions],
         "links": visible_links,
     }
 

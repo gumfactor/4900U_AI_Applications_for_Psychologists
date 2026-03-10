@@ -125,15 +125,16 @@ def test_note_detail_shows_provenance() -> None:
     client = build_test_client()
     response = client.get("/notes/concept-personal-knowledge-base")
     assert response.status_code == 200
-    assert "AI Activity" in response.text
+    assert "Version History" in response.text
     assert "Related AI logs" in response.text
+    assert "Connections" in response.text
 
 
 def test_note_detail_preserves_navigation_context() -> None:
     client = build_test_client()
     response = client.get("/notes/concept-personal-knowledge-base?return_to=%2Fnotes%3Ftopic%3Dknowledge%2520management")
     assert response.status_code == 200
-    assert 'href="/notes?topic=knowledge management"' in response.text
+    assert "&larr;" in response.text
     assert "Related Notes" in response.text
 
 
@@ -155,7 +156,9 @@ def test_note_detail_replaces_placeholder_scaffolding_with_review_callouts() -> 
     assert draft_response.status_code == 200
     detail_response = client.get(f"/notes/{draft_response.json()['slug']}")
     assert detail_response.status_code == 200
-    assert "Key points still need to be curated." in detail_response.text
+    assert "Key Points" not in detail_response.text
+    assert "Evidence / Sources" not in detail_response.text
+    assert "Open Questions" not in detail_response.text
     assert "Needs manual editing" not in detail_response.text
 
 

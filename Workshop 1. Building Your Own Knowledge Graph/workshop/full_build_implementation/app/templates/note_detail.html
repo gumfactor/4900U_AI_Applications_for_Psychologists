@@ -2,9 +2,12 @@
 {% block content %}
 <section class="page-header">
     <div>
-        <p class="eyebrow">Note</p>
-        <p class="detail-breadcrumb"><a href="{{ return_to }}">Back to notes</a></p>
+        <p class="detail-breadcrumb"><a href="{{ return_to }}"><span aria-hidden="true">&larr;</span> Back to notes</a></p>
         <h2>{{ note.metadata.title }}</h2>
+        <div class="note-title-meta">
+            <span>Updated {{ note.metadata.updated }}</span>
+            <span>Created {{ note.metadata.created }}</span>
+        </div>
     </div>
     <div class="page-header-actions">
         <a href="/notes/{{ note.slug }}/edit?return_to={{ return_to | urlencode }}" class="ghost-link">Edit Note</a>
@@ -12,30 +15,6 @@
 </section>
 <section class="note-detail-layout">
     <div class="note-main-column">
-        <article class="panel note-hero-panel">
-            <div class="attribute-chip-group">
-                {% for topic in note.metadata.topics %}
-                <a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip topic">{{ topic }}</a>
-                {% endfor %}
-                {% for tag in note.metadata.tags %}
-                <a href="{{ build_explore_href('tag', tag) }}" class="attribute-chip tag">{{ tag }}</a>
-                {% endfor %}
-                {% for person in note.metadata.people %}
-                <a href="{{ build_explore_href('person', person) }}" class="attribute-chip person">{{ person }}</a>
-                {% endfor %}
-                {% for source in note.metadata.sources %}
-                <a href="{{ build_explore_href('source', source) }}" class="attribute-chip source">{{ source }}</a>
-                {% endfor %}
-                {% for project in note.metadata.projects %}
-                <a href="{{ build_explore_href('project', project) }}" class="attribute-chip project">{{ project }}</a>
-                {% endfor %}
-            </div>
-            <div class="note-hero-meta">
-                <span>Updated {{ note.metadata.updated }}</span>
-                <span>Created {{ note.metadata.created }}</span>
-            </div>
-        </article>
-
         <article class="panel note-content-panel">
             <h3>Summary</h3>
             {% if draft_state.summary_is_placeholder %}
@@ -49,27 +28,23 @@
             {% endif %}
         </article>
 
+        {% if draft_state.key_points %}
         <article class="panel note-section-panel">
             <h3>Key Points</h3>
-            {% if draft_state.key_points %}
             <ul class="section-list">
                 {% for item in draft_state.key_points %}<li>{{ item }}</li>{% endfor %}
             </ul>
-            {% else %}
-            <p class="draft-callout">Key points still need to be curated.</p>
-            {% endif %}
         </article>
+        {% endif %}
 
+        {% if draft_state.evidence %}
         <article class="panel note-section-panel">
             <h3>Evidence / Sources</h3>
-            {% if draft_state.evidence %}
             <ul class="section-list">
                 {% for item in draft_state.evidence %}<li>{{ item }}</li>{% endfor %}
             </ul>
-            {% else %}
-            <p class="draft-callout">Evidence and source support still need review.</p>
-            {% endif %}
         </article>
+        {% endif %}
 
         <article class="panel note-section-panel">
             <h3>Linked Notes</h3>
@@ -86,28 +61,20 @@
             <p class="draft-callout">Linked notes have not been added yet.</p>
             {% endif %}
         </article>
-
-        <article class="panel note-section-panel">
-            <h3>Open Questions</h3>
-            {% if draft_state.open_questions %}
-            <ul class="section-list">
-                {% for item in draft_state.open_questions %}<li>{{ item }}</li>{% endfor %}
-            </ul>
-            {% else %}
-            <p class="draft-callout">Open questions have not been captured yet.</p>
-            {% endif %}
-        </article>
     </div>
 
     <aside class="note-sidebar">
         <article class="panel">
-            <h3>Metadata</h3>
-            <ul class="clean-list">
-                <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
-                <li><span>Updated</span><strong>{{ note.metadata.updated }}</strong></li>
-                <li><span>Created</span><strong>{{ note.metadata.created }}</strong></li>
-                <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
+            <h3>Related Notes</h3>
+            {% if related_notes %}
+            <ul class="link-list">
+                {% for related_note in related_notes %}
+                <li><a href="/notes/{{ related_note.slug }}?return_to={{ return_to | urlencode }}">{{ related_note.metadata.title }}</a></li>
+                {% endfor %}
             </ul>
+            {% else %}
+            <p class="muted-text">No related notes found from shared metadata yet.</p>
+            {% endif %}
         </article>
 
         <article class="panel">
@@ -150,7 +117,7 @@
         </article>
 
         <article class="panel">
-            <h3>AI Activity</h3>
+            <h3>Version History</h3>
             <ul class="clean-list">
                 <li><span>Related AI logs</span><strong>{{ related_logs | length }}</strong></li>
             </ul>
@@ -166,16 +133,13 @@
         </article>
 
         <article class="panel">
-            <h3>Related Notes</h3>
-            {% if related_notes %}
-            <ul class="link-list">
-                {% for related_note in related_notes %}
-                <li><a href="/notes/{{ related_note.slug }}?return_to={{ return_to | urlencode }}">{{ related_note.metadata.title }}</a></li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="muted-text">No related notes found from shared metadata yet.</p>
-            {% endif %}
+            <details class="attribute-details">
+                <summary>Show Metadata</summary>
+                <ul class="clean-list">
+                    <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
+                    <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
+                </ul>
+            </details>
         </article>
     </aside>
 </section>

@@ -11,49 +11,54 @@
 </section>
 <section class="panel filter-panel">
     <form method="get" action="/notes" class="filter-grid">
-        <label>Search
-            <input name="q" type="text" value="{{ active_filters.q }}" placeholder="Search title, summary, or body">
-        </label>
-        <label>Topic
-            <input name="topic" type="text" value="{{ active_filters.topic }}" list="topics">
-            <datalist id="topics">
-                {% for value in filter_options.topics %}
-                <option value="{{ value }}"></option>
-                {% endfor %}
-            </datalist>
-        </label>
-        <label>Tag
-            <input name="tag" type="text" value="{{ active_filters.tag }}" list="tags">
-            <datalist id="tags">
-                {% for value in filter_options.tags %}
-                <option value="{{ value }}"></option>
-                {% endfor %}
-            </datalist>
-        </label>
-        <label>Person
-            <input name="person" type="text" value="{{ active_filters.person }}" list="people">
-            <datalist id="people">
-                {% for value in filter_options.people %}
-                <option value="{{ value }}"></option>
-                {% endfor %}
-            </datalist>
-        </label>
-        <label>Source
-            <input name="source" type="text" value="{{ active_filters.source }}" list="sources">
-            <datalist id="sources">
-                {% for value in filter_options.sources %}
-                <option value="{{ value }}"></option>
-                {% endfor %}
-            </datalist>
-        </label>
-        <label>Project
-            <input name="project" type="text" value="{{ active_filters.project }}" list="projects">
-            <datalist id="projects">
-                {% for value in filter_options.projects %}
-                <option value="{{ value }}"></option>
-                {% endfor %}
-            </datalist>
-        </label>
+        <div class="filter-fields">
+            <label class="filter-field filter-field-search">Search
+                <input name="q" type="text" value="{{ active_filters.q }}" placeholder="Search title, summary, or body">
+            </label>
+            <label class="filter-field">Topic
+                <input name="topic" type="text" value="{{ active_filters.topic }}" list="topics">
+                <datalist id="topics">
+                    {% for value in filter_options.topics %}
+                    <option value="{{ value }}"></option>
+                    {% endfor %}
+                </datalist>
+            </label>
+            <label class="filter-field">Tag
+                <input name="tag" type="text" value="{{ active_filters.tag }}" list="tags">
+                <datalist id="tags">
+                    {% for value in filter_options.tags %}
+                    <option value="{{ value }}"></option>
+                    {% endfor %}
+                </datalist>
+            </label>
+            <label class="filter-field">Person
+                <input name="person" type="text" value="{{ active_filters.person }}" list="people">
+                <datalist id="people">
+                    {% for value in filter_options.people %}
+                    <option value="{{ value }}"></option>
+                    {% endfor %}
+                </datalist>
+            </label>
+            <label class="filter-field">Source
+                <input name="source" type="text" value="{{ active_filters.source }}" list="sources">
+                <datalist id="sources">
+                    {% for value in filter_options.sources %}
+                    <option value="{{ value }}"></option>
+                    {% endfor %}
+                </datalist>
+            </label>
+            <label class="filter-field">Project
+                <input name="project" type="text" value="{{ active_filters.project }}" list="projects">
+                <datalist id="projects">
+                    {% for value in filter_options.projects %}
+                    <option value="{{ value }}"></option>
+                    {% endfor %}
+                </datalist>
+            </label>
+            <label class="filter-field filter-field-date">Created Since
+                <input name="created_since" type="date" value="{{ active_filters.created_since }}">
+            </label>
+        </div>
         <input name="view" type="hidden" value="{{ view_mode }}">
         <div class="filter-actions">
             <button type="submit" class="inline-button">Filter</button>
@@ -69,9 +74,19 @@
         {% set people = note.metadata.people | sort %}
         {% set sources = note.metadata.sources | sort %}
         {% set projects = note.metadata.projects | sort %}
+        {% set has_attachments = note.metadata.attachments %}
         {% if view_mode == 'row' %}
         <div class="panel-head note-row-header">
-            <h3><a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a></h3>
+            <h3 class="note-card-title">
+                <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a>
+                {% if has_attachments %}
+                <span class="note-attachment-indicator" title="This note has attachments" aria-label="This note has attachments">
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                        <path d="M5.5 8.5 9.74 4.26a2.5 2.5 0 1 1 3.54 3.54L7.27 13.8a4 4 0 0 1-5.66-5.66l6.01-6.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4"/>
+                    </svg>
+                </span>
+                {% endif %}
+            </h3>
             {% if topics or tags or people or sources or projects %}
             <details class="attribute-details note-row-attributes">
                 <summary>Show Attributes</summary>
@@ -131,7 +146,16 @@
         </div>
         {% else %}
         <div class="panel-head">
-            <h3><a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a></h3>
+            <h3 class="note-card-title">
+                <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a>
+                {% if has_attachments %}
+                <span class="note-attachment-indicator" title="This note has attachments" aria-label="This note has attachments">
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                        <path d="M5.5 8.5 9.74 4.26a2.5 2.5 0 1 1 3.54 3.54L7.27 13.8a4 4 0 0 1-5.66-5.66l6.01-6.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4"/>
+                    </svg>
+                </span>
+                {% endif %}
+            </h3>
         </div>
         {% if topics or tags or people or sources or projects %}
         <details class="attribute-details">

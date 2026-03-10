@@ -41,13 +41,13 @@ def test_notes_and_stats_routes() -> None:
     notes_page = client.get("/")
     stats_page = client.get("/stats")
     row_notes_page = client.get("/notes?view=row")
-    searched_notes_page = client.get("/notes?q=provenance")
+    searched_notes_page = client.get("/notes?q=provenance")`n    dated_notes_page = client.get("/notes?created_since=2026-03-09")
     notes = client.get("/api/notes")
     assert notes_page.status_code == 200
     assert stats_page.status_code == 200
     assert row_notes_page.status_code == 200
-    assert searched_notes_page.status_code == 200
-    assert "AI Provenance Logging" in searched_notes_page.text
+    assert searched_notes_page.status_code == 200`n    assert dated_notes_page.status_code == 200
+    assert "AI Provenance Logging" in searched_notes_page.text`n    assert '/notes/note-neuroimaging-in-psychopathy?return_to=/notes%3Fcreated_since%3D2026-03-09' in dated_notes_page.text`n    assert '/notes/concept-ai-provenance-logging?return_to=/notes%3Fcreated_since%3D2026-03-09' not in dated_notes_page.text
     assert notes_page.text.count('<option value="Workshop Instructor"></option>') == 1
     assert notes.status_code == 200
     assert len(notes.json()) >= 7

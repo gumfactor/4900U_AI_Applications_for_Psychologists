@@ -4,8 +4,8 @@
     <div><p class="eyebrow">Note Browser</p><h2>Notes</h2></div>
     <div class="page-header-actions compact-actions">
         <div class="view-toggle" role="group" aria-label="Toggle note layout">
-            <a href="/notes?topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
-            <a href="/notes?topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&view=row" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
+            <a href="/notes?q={{ active_filters.q | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&created_since={{ active_filters.created_since | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
+            <a href="/notes?q={{ active_filters.q | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&created_since={{ active_filters.created_since | urlencode }}&view=row" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
         </div>
     </div>
 </section>
@@ -56,7 +56,7 @@
         </label>
         <input name="view" type="hidden" value="{{ view_mode }}">
         <div class="filter-actions">
-            <button type="submit" class="inline-button">Filter Notes</button>
+            <button type="submit" class="inline-button">Filter</button>
             <a href="/notes" class="ghost-link">Clear</a>
         </div>
     </form>

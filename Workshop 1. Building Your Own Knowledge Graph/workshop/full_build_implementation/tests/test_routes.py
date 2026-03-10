@@ -129,6 +129,14 @@ def test_note_detail_shows_provenance() -> None:
     assert "Related AI logs" in response.text
 
 
+def test_note_detail_preserves_navigation_context() -> None:
+    client = build_test_client()
+    response = client.get("/notes/concept-personal-knowledge-base?return_to=%2Fnotes%3Ftopic%3Dknowledge%2520management")
+    assert response.status_code == 200
+    assert 'href="/notes?topic=knowledge management"' in response.text
+    assert "Related Notes" in response.text
+
+
 def test_source_detail_supports_draft_generation() -> None:
     client = build_test_client()
     response = client.get("/sources/source-pkb-design-principles")

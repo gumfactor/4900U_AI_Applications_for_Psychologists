@@ -6,7 +6,8 @@
         <h2>{{ note.metadata.title }}</h2>
     </div>
     <div class="page-header-actions">
-        <a href="/notes/{{ note.slug }}" class="ghost-link">Back To Note</a>
+        <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link">Back To Note</a>
+        <a href="{{ return_to }}" class="ghost-link">Back To Notes</a>
     </div>
 </section>
 <section class="panel">

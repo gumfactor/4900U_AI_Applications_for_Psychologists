@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 import re
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -113,18 +113,21 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         )
 
     @app.get("/notes/{slug}", response_class=HTMLResponse)
-    def note_detail(request: Request, slug: str) -> HTMLResponse:
+    def note_detail(request: Request, slug: str, return_to: str | None = None) -> HTMLResponse:
         try:
             note = note_repository.get_note(slug)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         related_logs = _logs_for_note(log_service.list_logs(), note.path)
+        related_notes = _related_notes_for(note_repository.list_notes(), note)
         return templates.TemplateResponse(
             request,
             "note_detail.html",
             {
                 "note": note,
                 "related_logs": related_logs,
+                "related_notes": related_notes,
+                "return_to": _safe_return_to(return_to),
                 "ai_enabled": settings.ai_enabled,
                 "title": note.metadata.title,
                 "build_explore_href": _build_explore_href,
@@ -132,7 +135,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         )
 
     @app.get("/notes/{slug}/edit", response_class=HTMLResponse)
-    def edit_note_page(request: Request, slug: str) -> HTMLResponse:
+    def edit_note_page(request: Request, slug: str, return_to: str | None = None) -> HTMLResponse:
         try:
             note = note_repository.get_note(slug)
         except FileNotFoundError as exc:
@@ -142,6 +145,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             "edit_note.html",
             {
                 "note": note,
+                "return_to": _safe_return_to(return_to),
                 "ai_enabled": settings.ai_enabled,
                 "title": f"Edit {note.metadata.title}",
             },
@@ -426,6 +430,9 @@ def _render_notes_page(
     view: str | None = None,
 ) -> HTMLResponse:
     view_mode = view if view in {"grid", "row"} else "grid"
+    current_path = request.url.path
+    if request.url.query:
+        current_path = f"{current_path}?{request.url.query}"
     notes = note_repository.list_notes()
     all_notes = notes
     if q:
@@ -467,6 +474,7 @@ def _render_notes_page(
                 "project": project or "",
                 "view": view_mode,
             },
+            "return_to": current_path,
         },
     )
 
@@ -556,6 +564,38 @@ def _build_explore_href(kind: str, value: str) -> str:
 
 def _logs_for_note(logs: list, note_path: str) -> list:
     return [log for log in logs if log.output_target == note_path or note_path in log.input_files]
+
+
+def _safe_return_to(return_to: str | None) -> str:
+    if not return_to:
+        return "/notes"
+    decoded = unquote(return_to).strip()
+    if decoded.startswith("/notes") or decoded.startswith("/explore"):
+        return decoded
+    return "/notes"
+
+
+def _related_notes_for(notes: list, current_note) -> list:
+    scored_notes: list[tuple[int, object]] = []
+    current_sets = {
+        "topics": set(current_note.metadata.topics),
+        "tags": set(current_note.metadata.tags),
+        "people": set(current_note.metadata.people),
+        "sources": set(current_note.metadata.sources),
+        "projects": set(current_note.metadata.projects),
+    }
+    for note in notes:
+        if note.slug == current_note.slug:
+            continue
+        score = 0
+        for attribute_name, current_values in current_sets.items():
+            if not current_values:
+                continue
+            score += len(current_values.intersection(getattr(note.metadata, attribute_name)))
+        if score:
+            scored_notes.append((score, note))
+    scored_notes.sort(key=lambda item: (-item[0], item[1].metadata.title.casefold()))
+    return [note for _, note in scored_notes[:5]]
 
 
 def _note_href_for_log(log_entry) -> str | None:

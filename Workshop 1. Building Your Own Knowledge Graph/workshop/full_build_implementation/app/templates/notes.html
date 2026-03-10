@@ -65,7 +65,7 @@
     {% for note in notes %}
     <article class="panel note-card{% if view_mode == 'row' %} note-card-row{% endif %}">
         <div class="panel-head">
-            <h3><a href="/notes/{{ note.slug }}">{{ note.metadata.title }}</a></h3>
+            <h3><a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a></h3>
         </div>
         {% set topics = note.metadata.topics | sort %}
         {% set tags = note.metadata.tags | sort %}
@@ -121,7 +121,7 @@
         {% endif %}
         <div class="note-preview-block">
             <p class="note-preview">{{ build_note_preview(note.summary) }}</p>
-            <a href="/notes/{{ note.slug }}" class="ghost-link note-preview-link">Continue reading</a>
+            <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link note-preview-link">Continue reading</a>
         </div>
         <div class="meta-row">
             <span>Updated: {{ note.metadata.updated }}</span>

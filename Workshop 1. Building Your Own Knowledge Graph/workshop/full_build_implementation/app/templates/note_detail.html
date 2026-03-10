@@ -3,10 +3,11 @@
 <section class="page-header">
     <div>
         <p class="eyebrow">Note</p>
+        <p class="detail-breadcrumb"><a href="{{ return_to }}">Back to notes</a></p>
         <h2>{{ note.metadata.title }}</h2>
     </div>
     <div class="page-header-actions">
-        <a href="/notes/{{ note.slug }}/edit" class="ghost-link">Edit Note</a>
+        <a href="/notes/{{ note.slug }}/edit?return_to={{ return_to | urlencode }}" class="ghost-link">Edit Note</a>
     </div>
 </section>
 <section class="note-detail-layout">
@@ -157,6 +158,19 @@
             </ul>
             {% else %}
             <p class="muted-text">No AI logs are linked to this note yet.</p>
+            {% endif %}
+        </article>
+
+        <article class="panel">
+            <h3>Related Notes</h3>
+            {% if related_notes %}
+            <ul class="link-list">
+                {% for related_note in related_notes %}
+                <li><a href="/notes/{{ related_note.slug }}?return_to={{ return_to | urlencode }}">{{ related_note.metadata.title }}</a></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No related notes found from shared metadata yet.</p>
             {% endif %}
         </article>
     </aside>

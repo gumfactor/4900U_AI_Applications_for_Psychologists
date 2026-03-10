@@ -3,12 +3,9 @@
 <section class="page-header">
     <div>
         <p class="eyebrow">Bounded AI</p>
-        <h2>AI Tasks</h2>
+        <h2>Multi Note Queries</h2>
+        <p>Ask a question across one or more selected notes.</p>
         <p>Default model: {{ default_model }}. Optional higher-quality model: {{ high_quality_model }}.</p>
-    </div>
-    <div class="status-card">
-        <strong>AI Status</strong>
-        <p>{{ "Enabled" if ai_enabled else "Disabled" }}</p>
     </div>
 </section>
 {% if not ai_enabled %}
@@ -19,13 +16,11 @@
 {% endif %}
 <section class="grid two-up">
     <article class="panel">
-        <h3>Run AI Task</h3>
+        <h3>Ask Questions</h3>
         <form id="ai-form">
             <label>Task
                 <select name="task">
-                    <option value="metadata_extraction">Metadata Extraction</option>
-                    <option value="related_note_suggestion">Related Note Suggestion</option>
-                    <option value="question_answering">Question Answering</option>
+                    <option value="question_answering">Ask Questions</option>
                 </select>
             </label>
             <label>Model
@@ -40,17 +35,17 @@
                 </select>
             </label>
             <label>Question
-                <textarea name="question" rows="4" placeholder="Only required for question answering"></textarea>
+                <textarea name="question" rows="4" placeholder="Ask a question across the selected notes" required></textarea>
             </label>
-            <button type="submit" {% if not ai_enabled %}disabled{% endif %}>Run Task</button>
+            <button type="submit" {% if not ai_enabled %}disabled{% endif %}>Ask</button>
         </form>
     </article>
     <article class="panel">
-        <h3>Task Result</h3>
-        <pre id="ai-output">Run a task to preview the output.</pre>
+        <h3>Query Result</h3>
+        <pre id="ai-output">Ask a question to preview the answer.</pre>
         <div id="save-draft-shell" class="save-shell hidden">
             <h4>Save Draft Note</h4>
-            <p class="muted-text">On save, AI infers note attributes from the generated draft and stores the note in one action.</p>
+            <p class="muted-text">Save the answer as a draft note. On save, AI infers note attributes from the generated draft and stores the note in one action.</p>
             <form id="save-draft-form">
                 <label>Title <input name="title" type="text" required></label>
                 <label>Topics <input name="topics" type="text" placeholder="Comma separated topics"></label>

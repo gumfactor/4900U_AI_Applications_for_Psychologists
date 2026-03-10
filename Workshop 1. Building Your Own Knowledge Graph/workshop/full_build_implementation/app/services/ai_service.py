@@ -13,10 +13,9 @@ from app.services.prompt_repository import PromptRepository
 
 class AiService:
     TASK_PROMPTS = {
-        "metadata_extraction": "02-metadata-extraction",
-        "related_note_suggestion": "03-related-note-suggestion",
         "question_answering": "04-question-answering",
     }
+    METADATA_PROMPT = "02-metadata-extraction"
     NOTE_BODY_PROMPT = "05-note-body-structuring"
 
     def __init__(
@@ -45,22 +44,10 @@ class AiService:
         input_paths: list[str] = []
         blocks: list[str] = [prompt_template.content.strip()]
 
-        if request.task == "metadata_extraction":
-            if request.note_slugs:
-                note = self.note_repository.get_note(request.note_slugs[0])
-                input_paths.append(note.path)
-                blocks.extend(["", "Text:", note.raw_body])
-            else:
-                raise ValueError("metadata_extraction requires one note slug.")
-        elif request.task == "related_note_suggestion":
-            notes = self._load_selected_notes(request.note_slugs)
-            input_paths.extend(note.path for note in notes)
-            blocks.extend(["", "Notes:"])
-            blocks.extend(self._render_note_context(note) for note in notes)
-        elif request.task == "question_answering":
+        if request.task == "question_answering":
             if not request.question:
                 raise ValueError("question is required for question_answering.")
-            notes = self._load_selected_notes(request.note_slugs)
+            notes = self._load_selected_notes(request.note_slugs, minimum=1)
             input_paths.extend(note.path for note in notes)
             blocks.extend([f"", f"Question:\n{request.question}", "", "Notes:"])
             blocks.extend(self._render_note_context(note) for note in notes)
@@ -103,12 +90,12 @@ class AiService:
                 "tags": [],
                 "source_refs": source_refs or [],
                 "model": None,
-                "prompt_slug": self.TASK_PROMPTS["metadata_extraction"],
+                "prompt_slug": self.METADATA_PROMPT,
                 "raw_output": "",
                 "input_paths": source_refs or [],
             }
 
-        prompt_slug = self.TASK_PROMPTS["metadata_extraction"]
+        prompt_slug = self.METADATA_PROMPT
         prompt_template = self.prompt_repository.get_prompt(prompt_slug)
         selected_model = model or self.default_model
         prompt_text = "\n\n".join(
@@ -165,9 +152,11 @@ class AiService:
             "input_paths": [],
         }
 
-    def _load_selected_notes(self, slugs: list[str]) -> list[Note]:
-        if len(slugs) < 2 or len(slugs) > 5:
-            raise ValueError("Select between 2 and 5 notes for this task.")
+    def _load_selected_notes(self, slugs: list[str], minimum: int = 2, maximum: int = 5) -> list[Note]:
+        if len(slugs) < minimum or len(slugs) > maximum:
+            if minimum == maximum:
+                raise ValueError(f"Select exactly {minimum} notes for this task.")
+            raise ValueError(f"Select between {minimum} and {maximum} notes for this task.")
         return [self.note_repository.get_note(slug) for slug in slugs]
 
     @staticmethod

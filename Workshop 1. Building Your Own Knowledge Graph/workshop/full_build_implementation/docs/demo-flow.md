@@ -10,8 +10,5 @@
 5. Open the note editor and make a visible revision.
 6. Click a tag, person, source, project, or topic chip to move into the connected exploration view.
 7. Open `Stats` and show note/log counts.
-8. Open `AI Tasks` and run:
-    - `Metadata Extraction`
-    - `Related Note Suggestion`
-    - `Question Answering`
+8. Open `Multi Note Queries`, select multiple notes, and run `Ask Questions`.
 9. Open `Logs` and inspect the corresponding AI interaction entries.

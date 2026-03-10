@@ -84,9 +84,10 @@ def test_ai_run_and_save_draft_routes() -> None:
     ai_response = client.post(
         "/api/ai/run",
         json={
-            "task": "metadata_extraction",
-            "note_slugs": ["concept-personal-knowledge-base"],
+            "task": "question_answering",
+            "note_slugs": ["concept-personal-knowledge-base", "concept-bounded-querying"],
             "model": "gemini-2.5-flash-lite",
+            "question": "What do these notes say together?",
         },
     )
     assert ai_response.status_code == 200
@@ -333,7 +334,23 @@ def test_note_detail_preserves_navigation_context() -> None:
     response = client.get("/notes/concept-personal-knowledge-base?return_to=%2Fnotes%3Ftopic%3Dknowledge%2520management")
     assert response.status_code == 200
     assert "&larr;" in response.text
+    assert response.text.index("Ask a Question") < response.text.index("Related Notes")
+    assert 'data-note-slug="concept-personal-knowledge-base"' in response.text
     assert "Related Notes" in response.text
+
+
+def test_note_detail_question_answering_accepts_single_note() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/ai/run",
+        json={
+            "task": "question_answering",
+            "note_slugs": ["concept-personal-knowledge-base"],
+            "question": "What is this note about?",
+        },
+    )
+    assert response.status_code == 200
+    assert "Synthetic answer." in response.json()["output_text"]
 
 
 def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> None:

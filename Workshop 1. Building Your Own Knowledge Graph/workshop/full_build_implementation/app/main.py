@@ -251,7 +251,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "default_model": settings.default_model,
                 "high_quality_model": settings.high_quality_model,
                 "ai_enabled": settings.ai_enabled,
-                "title": "AI Tasks",
+                "title": "Multi Note Queries",
             },
         )
 

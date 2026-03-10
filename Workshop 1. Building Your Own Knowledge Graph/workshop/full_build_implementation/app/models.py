@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 RelationshipType = Literal["related_to", "supports", "contradicts", "applies_to", "mentions"]
-AiTaskType = Literal["metadata_extraction", "related_note_suggestion", "question_answering"]
+AiTaskType = Literal["question_answering"]
 
 
 class NoteMetadata(BaseModel):

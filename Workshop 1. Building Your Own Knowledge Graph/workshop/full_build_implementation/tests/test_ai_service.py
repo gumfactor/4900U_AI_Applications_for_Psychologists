@@ -45,21 +45,27 @@ def build_logs_dir(base_dir: Path, name: str) -> Path:
     return logs_dir
 
 
-def test_ai_service_runs_metadata_extraction_for_note() -> None:
+def test_ai_service_runs_question_answering_for_selected_notes() -> None:
     base_dir = Path(__file__).resolve().parent.parent
+    fake_client = FakeGeminiClient()
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
         PromptRepository(base_dir / "data" / "prompts"),
         LogService(build_logs_dir(base_dir, "ai-service-summary")),
-        FakeGeminiClient(),
+        fake_client,
         "gemini-2.5-flash-lite",
         "gemini-2.5-flash",
     )
     result = service.run_task(
-        AiTaskRequest(task="metadata_extraction", note_slugs=["concept-personal-knowledge-base"], model="gemini-2.5-flash-lite")
+        AiTaskRequest(
+            task="question_answering",
+            note_slugs=["concept-personal-knowledge-base", "concept-bounded-querying"],
+            question="How do these notes connect?",
+            model="gemini-2.5-flash-lite",
+        )
     )
-    assert result.task == "metadata_extraction"
-    assert "Text:" in service.gemini_client.last_prompt
+    assert result.task == "question_answering"
+    assert "Question:\nHow do these notes connect?" in fake_client.last_prompt
     assert result.log_path is not None
 
 

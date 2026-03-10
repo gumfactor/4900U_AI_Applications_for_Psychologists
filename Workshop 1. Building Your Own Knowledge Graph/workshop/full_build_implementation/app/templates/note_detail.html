@@ -82,6 +82,19 @@
 
     <aside class="note-sidebar">
         <article class="panel">
+            <h3>Ask a Question</h3>
+            {% if ai_enabled %}
+            <form data-note-question-form data-note-slug="{{ note.slug }}">
+                <textarea name="question" rows="4" placeholder="Ask a question about this note" required></textarea>
+                <button type="submit">Ask</button>
+            </form>
+            <pre class="note-question-output muted-text" data-note-question-output></pre>
+            {% else %}
+            <p class="muted-text">Set <code>GEMINI_API_KEY</code> to enable question answering.</p>
+            {% endif %}
+        </article>
+
+        <article class="panel">
             <h3>Related Notes</h3>
             {% if related_notes %}
             <ul class="link-list">
@@ -186,6 +199,28 @@ document.querySelector("[data-delete-note]")?.addEventListener("click", async (e
   button.disabled = true;
   await deleteNote(button.dataset.slug, button.dataset.returnTo);
   button.disabled = false;
+});
+
+document.querySelector("[data-note-question-form]")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const output = document.querySelector("[data-note-question-output]");
+  const submitButton = form.querySelector('button[type="submit"]');
+  const formData = new FormData(form);
+  output.textContent = "Thinking...";
+  submitButton.disabled = true;
+  const response = await fetch("/api/ai/run", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      task: "question_answering",
+      note_slugs: [form.dataset.noteSlug],
+      question: formData.get("question")
+    })
+  });
+  const data = await response.json();
+  output.textContent = response.ok ? data.output_text : (data.detail || "Question answering failed.");
+  submitButton.disabled = false;
 });
 </script>
 {% endblock %}

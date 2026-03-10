@@ -1,74 +1,164 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-    <div><h2>{{ note.metadata.title }}</h2></div>
+    <div>
+        <p class="eyebrow">Note</p>
+        <h2>{{ note.metadata.title }}</h2>
+    </div>
     <div class="page-header-actions">
-        <div class="status-card">
-            <strong>AI Activity</strong>
-            <p>Related AI logs: {{ related_logs | length }}</p>
-        </div>
         <a href="/notes/{{ note.slug }}/edit" class="ghost-link">Edit Note</a>
     </div>
 </section>
-<section class="grid two-up">
-    <article class="panel">
-        <h3>Summary</h3>
-        <p>{{ note.summary }}</p>
-        <h3>Key Points</h3>
-        <ul>{% for item in note.key_points %}<li>{{ item }}</li>{% endfor %}</ul>
-    </article>
-    <article class="panel">
-        <h3>Metadata</h3>
-        <ul class="clean-list">
-            <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
-            <li><span>Created</span><strong>{{ note.metadata.created }}</strong></li>
-            <li><span>Updated</span><strong>{{ note.metadata.updated }}</strong></li>
-            <li><span>Tags</span><strong>{{ note.metadata.tags | join(", ") }}</strong></li>
-        </ul>
-        <h3>Entity Attributes</h3>
-        <ul class="clean-list">
-            <li><span>Topics</span><strong>{% for topic in note.metadata.topics %}<a href="{{ build_explore_href('topic', topic) }}">{{ topic }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.topics %}n/a{% endif %}</strong></li>
-            <li><span>Tags</span><strong>{% for tag in note.metadata.tags %}<a href="{{ build_explore_href('tag', tag) }}">{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.tags %}n/a{% endif %}</strong></li>
-            <li><span>People</span><strong>{% for person in note.metadata.people %}<a href="{{ build_explore_href('person', person) }}">{{ person }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.people %}n/a{% endif %}</strong></li>
-            <li><span>Sources</span><strong>{% for source in note.metadata.sources %}<a href="{{ build_explore_href('source', source) }}">{{ source }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.sources %}n/a{% endif %}</strong></li>
-            <li><span>Projects</span><strong>{% for project in note.metadata.projects %}<a href="{{ build_explore_href('project', project) }}">{{ project }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not note.metadata.projects %}n/a{% endif %}</strong></li>
-            <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
-        </ul>
-        <h3>Evidence / Sources</h3>
-        <ul>{% for item in note.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
-    </article>
-</section>
-<section class="grid two-up">
-    <article class="panel">
-        <h3>AI Activity</h3>
-        <ul class="clean-list">
-            <li><span>Related AI logs</span><strong>{{ related_logs | length }}</strong></li>
-        </ul>
-        {% if related_logs %}
-        <h3>Recent AI Activity</h3>
-        <ul class="link-list">
-            {% for log in related_logs %}
-            <li><a href="/logs/{{ log.slug }}">{{ log.task }} - {{ log.timestamp }}</a></li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="muted-text">No AI logs are linked to this note yet.</p>
-        {% endif %}
-    </article>
-    <article class="panel">
-        <h3>Editing Guidance</h3>
-        <p>Use the edit screen to correct metadata, tighten summaries, and keep the note structurally clean.</p>
-        <p>Linked AI logs show how metadata or draft content was generated without treating notes as a separate AI-only class.</p>
-    </article>
-</section>
-<section class="grid two-up">
-    <article class="panel">
-        <h3>Linked Notes</h3>
-        <ul>{% for link in note.links %}<li><code>{{ link.relationship }}</code> {{ link.title }} ({{ link.target }})</li>{% endfor %}</ul>
-    </article>
-    <article class="panel">
-        <h3>Open Questions</h3>
-        <ul>{% for item in note.open_questions %}<li>{{ item }}</li>{% endfor %}</ul>
-    </article>
+<section class="note-detail-layout">
+    <div class="note-main-column">
+        <article class="panel note-hero-panel">
+            <div class="attribute-chip-group">
+                {% for topic in note.metadata.topics %}
+                <a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip topic">{{ topic }}</a>
+                {% endfor %}
+                {% for tag in note.metadata.tags %}
+                <a href="{{ build_explore_href('tag', tag) }}" class="attribute-chip tag">{{ tag }}</a>
+                {% endfor %}
+                {% for person in note.metadata.people %}
+                <a href="{{ build_explore_href('person', person) }}" class="attribute-chip person">{{ person }}</a>
+                {% endfor %}
+                {% for source in note.metadata.sources %}
+                <a href="{{ build_explore_href('source', source) }}" class="attribute-chip source">{{ source }}</a>
+                {% endfor %}
+                {% for project in note.metadata.projects %}
+                <a href="{{ build_explore_href('project', project) }}" class="attribute-chip project">{{ project }}</a>
+                {% endfor %}
+            </div>
+            <div class="note-hero-meta">
+                <span>Updated {{ note.metadata.updated }}</span>
+                <span>Created {{ note.metadata.created }}</span>
+            </div>
+        </article>
+
+        <article class="panel note-content-panel">
+            <h3>Summary</h3>
+            <div class="note-prose">
+                {% for paragraph in note.summary.split('\n\n') if paragraph.strip() %}
+                <p>{{ paragraph }}</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel note-section-panel">
+            <h3>Key Points</h3>
+            {% if note.key_points %}
+            <ul class="section-list">
+                {% for item in note.key_points %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No key points added yet.</p>
+            {% endif %}
+        </article>
+
+        <article class="panel note-section-panel">
+            <h3>Evidence / Sources</h3>
+            {% if note.evidence %}
+            <ul class="section-list">
+                {% for item in note.evidence %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No evidence or sources recorded yet.</p>
+            {% endif %}
+        </article>
+
+        <article class="panel note-section-panel">
+            <h3>Linked Notes</h3>
+            {% if note.links %}
+            <ul class="note-link-list">
+                {% for link in note.links %}
+                <li>
+                    <span class="pill">{{ link.relationship }}</span>
+                    <a href="{{ link.target | replace('./', '/notes/') | replace('.md', '') }}">{{ link.title }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No linked notes yet.</p>
+            {% endif %}
+        </article>
+
+        <article class="panel note-section-panel">
+            <h3>Open Questions</h3>
+            {% if note.open_questions %}
+            <ul class="section-list">
+                {% for item in note.open_questions %}<li>{{ item }}</li>{% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No open questions listed.</p>
+            {% endif %}
+        </article>
+    </div>
+
+    <aside class="note-sidebar">
+        <article class="panel">
+            <h3>Metadata</h3>
+            <ul class="clean-list">
+                <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
+                <li><span>Updated</span><strong>{{ note.metadata.updated }}</strong></li>
+                <li><span>Created</span><strong>{{ note.metadata.created }}</strong></li>
+                <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
+            </ul>
+        </article>
+
+        <article class="panel">
+            <h3>Connections</h3>
+            <div class="sidebar-section">
+                <span class="attribute-label">Topics</span>
+                <div class="attribute-chip-group">
+                    {% for topic in note.metadata.topics %}<a href="{{ build_explore_href('topic', topic) }}" class="attribute-chip topic">{{ topic }}</a>{% endfor %}
+                    {% if not note.metadata.topics %}<span class="muted-text">n/a</span>{% endif %}
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <span class="attribute-label">Tags</span>
+                <div class="attribute-chip-group">
+                    {% for tag in note.metadata.tags %}<a href="{{ build_explore_href('tag', tag) }}" class="attribute-chip tag">{{ tag }}</a>{% endfor %}
+                    {% if not note.metadata.tags %}<span class="muted-text">n/a</span>{% endif %}
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <span class="attribute-label">People</span>
+                <div class="attribute-chip-group">
+                    {% for person in note.metadata.people %}<a href="{{ build_explore_href('person', person) }}" class="attribute-chip person">{{ person }}</a>{% endfor %}
+                    {% if not note.metadata.people %}<span class="muted-text">n/a</span>{% endif %}
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <span class="attribute-label">Sources</span>
+                <div class="attribute-chip-group">
+                    {% for source in note.metadata.sources %}<a href="{{ build_explore_href('source', source) }}" class="attribute-chip source">{{ source }}</a>{% endfor %}
+                    {% if not note.metadata.sources %}<span class="muted-text">n/a</span>{% endif %}
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <span class="attribute-label">Projects</span>
+                <div class="attribute-chip-group">
+                    {% for project in note.metadata.projects %}<a href="{{ build_explore_href('project', project) }}" class="attribute-chip project">{{ project }}</a>{% endfor %}
+                    {% if not note.metadata.projects %}<span class="muted-text">n/a</span>{% endif %}
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <h3>AI Activity</h3>
+            <ul class="clean-list">
+                <li><span>Related AI logs</span><strong>{{ related_logs | length }}</strong></li>
+            </ul>
+            {% if related_logs %}
+            <ul class="link-list">
+                {% for log in related_logs[:5] %}
+                <li><a href="/logs/{{ log.slug }}">{{ log.task }} - {{ log.timestamp }}</a></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No AI logs are linked to this note yet.</p>
+            {% endif %}
+        </article>
+    </aside>
 </section>
 {% endblock %}

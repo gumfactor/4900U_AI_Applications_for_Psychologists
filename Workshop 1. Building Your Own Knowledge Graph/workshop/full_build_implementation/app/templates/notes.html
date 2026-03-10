@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-    <div><p class="eyebrow">Note Browser</p><h2>Notes</h2></div>
+    <div><h2>Note Browser</h2></div>
     <div class="page-header-actions compact-actions">
         <div class="view-toggle" role="group" aria-label="Toggle note layout">
             <a href="/notes?q={{ active_filters.q | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&created_since={{ active_filters.created_since | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>

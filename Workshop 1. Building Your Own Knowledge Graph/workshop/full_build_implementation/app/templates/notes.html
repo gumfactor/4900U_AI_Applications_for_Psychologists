@@ -128,7 +128,10 @@
             </div>
         </details>
         {% endif %}
-        <p>{{ note.summary }}</p>
+        <div class="note-preview-block">
+            <p class="note-preview">{{ note.summary }}</p>
+            <a href="/notes/{{ note.slug }}" class="ghost-link note-preview-link">Continue reading</a>
+        </div>
         <div class="meta-row">
             <span>Status: {{ note.metadata.status }}</span>
             <span>AI: {{ "yes" if note.metadata.ai_assisted else "no" }}</span>

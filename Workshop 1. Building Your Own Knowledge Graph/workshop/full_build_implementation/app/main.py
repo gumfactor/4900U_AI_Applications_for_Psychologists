@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+import re
 from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request
@@ -456,6 +457,7 @@ def _render_notes_page(
             "title": "Notes",
             "view_mode": view_mode,
             "build_explore_href": _build_explore_href,
+            "build_note_preview": _build_note_preview,
             "active_filters": {
                 "q": q or "",
                 "topic": topic or "",
@@ -479,6 +481,15 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
         seen.add(cleaned)
         merged.append(cleaned)
     return merged
+
+
+def _build_note_preview(text: str) -> str:
+    cleaned = " ".join((text or "").split())
+    if not cleaned:
+        return ""
+    sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+    preview = " ".join(sentences[:2]).strip()
+    return preview or cleaned
 
 
 def _build_filter_options(notes: list) -> dict[str, list[str]]:

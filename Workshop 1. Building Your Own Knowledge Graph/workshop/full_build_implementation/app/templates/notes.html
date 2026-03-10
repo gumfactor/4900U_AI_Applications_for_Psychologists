@@ -120,7 +120,7 @@
         </details>
         {% endif %}
         <div class="note-preview-block">
-            <p class="note-preview">{{ note.summary }}</p>
+            <p class="note-preview">{{ build_note_preview(note.summary) }}</p>
             <a href="/notes/{{ note.slug }}" class="ghost-link note-preview-link">Continue reading</a>
         </div>
         <div class="meta-row">

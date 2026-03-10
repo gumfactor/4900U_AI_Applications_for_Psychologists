@@ -63,6 +63,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
+        created_since: str | None = None,
         view: str | None = None,
     ) -> HTMLResponse:
         return _render_notes_page(
@@ -76,6 +77,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             person=person,
             source=source,
             project=project,
+            created_since=created_since,
             view=view,
         )
 
@@ -103,6 +105,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
+        created_since: str | None = None,
         view: str | None = None,
     ) -> HTMLResponse:
         return _render_notes_page(
@@ -116,6 +119,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             person=person,
             source=source,
             project=project,
+            created_since=created_since,
             view=view,
         )
 
@@ -443,6 +447,25 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         )
         return note.model_dump()
 
+    @app.delete("/api/notes/{slug}")
+    def delete_note(slug: str) -> dict:
+        try:
+            note = note_repository.delete_note(slug)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        attachment_service.delete_note_attachments(slug)
+        note_history_service.delete_history(slug)
+        log_service.write_log(
+            task="delete_note",
+            prompt_slug="manual-delete",
+            model="n/a",
+            input_files=note.metadata.source_refs,
+            output_target=note.path,
+            review_outcome="deleted",
+            notes="Note deleted from UI.",
+        )
+        return {"slug": slug, "deleted": True}
+
     @app.exception_handler(404)
     async def not_found_handler(request: Request, exc: HTTPException) -> HTMLResponse | JSONResponse:
         accepts_json = "application/json" in request.headers.get("accept", "")
@@ -483,6 +506,7 @@ def _render_notes_page(
     person: str | None = None,
     source: str | None = None,
     project: str | None = None,
+    created_since: str | None = None,
     view: str | None = None,
 ) -> HTMLResponse:
     view_mode = view if view in {"grid", "row"} else "grid"
@@ -510,6 +534,8 @@ def _render_notes_page(
         notes = [note for note in notes if source in note.metadata.sources]
     if project:
         notes = [note for note in notes if project in note.metadata.projects]
+    if created_since:
+        notes = [note for note in notes if note.metadata.created >= created_since]
     return templates.TemplateResponse(
         request,
         "notes.html",
@@ -528,6 +554,7 @@ def _render_notes_page(
                 "person": person or "",
                 "source": source or "",
                 "project": project or "",
+                "created_since": created_since or "",
                 "view": view_mode,
             },
             "return_to": current_path,

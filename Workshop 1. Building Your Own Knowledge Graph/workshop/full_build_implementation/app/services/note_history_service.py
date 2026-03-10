@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
+from shutil import rmtree
 
 import yaml
 
@@ -52,6 +53,9 @@ class NoteHistoryService:
             return versions
         self.record_version(note, action="imported")
         return self.list_versions(note.slug)
+
+    def delete_history(self, note_slug: str) -> None:
+        rmtree(self.history_dir / note_slug, ignore_errors=True)
 
     def _load_version(self, path: Path) -> NoteVersion:
         version_meta, note_markdown = parse_frontmatter(path.read_text(encoding="utf-8"))

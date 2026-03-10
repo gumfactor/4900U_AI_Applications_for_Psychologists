@@ -41,14 +41,19 @@ def test_notes_and_stats_routes() -> None:
     notes_page = client.get("/")
     stats_page = client.get("/stats")
     row_notes_page = client.get("/notes?view=row")
-    searched_notes_page = client.get("/notes?q=provenance")`n    dated_notes_page = client.get("/notes?created_since=2026-03-09")
+    searched_notes_page = client.get("/notes?q=provenance")
+    dated_notes_page = client.get("/notes?created_since=2026-03-09")
     notes = client.get("/api/notes")
     assert notes_page.status_code == 200
     assert stats_page.status_code == 200
     assert row_notes_page.status_code == 200
-    assert searched_notes_page.status_code == 200`n    assert dated_notes_page.status_code == 200
-    assert "AI Provenance Logging" in searched_notes_page.text`n    assert '/notes/note-neuroimaging-in-psychopathy?return_to=/notes%3Fcreated_since%3D2026-03-09' in dated_notes_page.text`n    assert '/notes/concept-ai-provenance-logging?return_to=/notes%3Fcreated_since%3D2026-03-09' not in dated_notes_page.text
+    assert searched_notes_page.status_code == 200
+    assert dated_notes_page.status_code == 200
+    assert "AI Provenance Logging" in searched_notes_page.text
+    assert '/notes/note-neuroimaging-in-psychopathy?return_to=/notes%3Fcreated_since%3D2026-03-09' in dated_notes_page.text
+    assert '/notes/concept-ai-provenance-logging?return_to=/notes%3Fcreated_since%3D2026-03-09' not in dated_notes_page.text
     assert notes_page.text.count('<option value="Workshop Instructor"></option>') == 1
+    assert "note-attachment-indicator" in notes_page.text
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
 
@@ -101,6 +106,7 @@ def test_save_draft_accepts_file_attachments() -> None:
     assert len(attachment_paths) == 1
     assert attachment_paths[0].endswith("/reading.pdf")
     detail_response = client.get(f"/notes/{response.json()['slug']}")
+    assert 'href="/attachments/note-attachment-draft/reading.pdf"' in detail_response.text
     assert "reading.pdf" in detail_response.text
     attachment_response = client.get("/attachments/note-attachment-draft/reading.pdf")
     assert attachment_response.status_code == 200
@@ -177,6 +183,36 @@ def test_edit_note_route_merges_existing_and_new_attachments() -> None:
     )
     assert updated.status_code == 200
     assert updated.json()["metadata"]["attachments"][0].endswith("/appendix.txt")
+
+
+def test_delete_note_route_removes_note_attachments_and_history() -> None:
+    client = build_test_client()
+    created = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Delete Me",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "attachments": [],
+            "attachment_uploads": [{"name": "to-delete.txt", "content_base64": "ZGVsZXRl"}],
+            "tags": [],
+            "content": "Draft content.",
+        },
+    )
+    assert created.status_code == 200
+    slug = created.json()["slug"]
+    client.get(f"/notes/{slug}")
+    deleted = client.delete(f"/api/notes/{slug}")
+    assert deleted.status_code == 200
+    assert deleted.json() == {"slug": slug, "deleted": True}
+    assert client.get(f"/api/notes/{slug}").status_code == 404
+    assert client.get(f"/notes/{slug}").status_code == 404
+    runtime_data_dir = Path(__file__).resolve().parent.parent / "_test_runtime" / "app_copy" / "data"
+    assert not (runtime_data_dir / "attachments" / slug).exists()
+    assert not (runtime_data_dir / "history" / slug).exists()
 
 
 def test_explore_route() -> None:

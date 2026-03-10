@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import re
+from shutil import rmtree
 from pathlib import Path
 
 from app.models import AttachmentUpload
@@ -28,8 +29,13 @@ class AttachmentService:
         return saved_paths
 
     def build_link(self, attachment_path: str) -> str:
-        normalized = attachment_path.replace("\\", "/").removeprefix("data/attachments/")
+        normalized = attachment_path.replace("\\", "/").lstrip("/")
+        for prefix in ("data/attachments/", "attachments/", "/attachments/"):
+            normalized = normalized.removeprefix(prefix)
         return f"/attachments/{normalized}"
+
+    def delete_note_attachments(self, note_slug: str) -> None:
+        rmtree(self.attachments_dir / note_slug, ignore_errors=True)
 
     @staticmethod
     def display_name(attachment_path: str) -> str:

@@ -87,6 +87,12 @@ class NoteRepository:
         path.write_text(build_note_document(title, metadata, content), encoding="utf-8")
         return self._load_note(path)
 
+    def delete_note(self, slug: str) -> Note:
+        note = self.get_note(slug)
+        path = self.notes_dir / f"{note.slug}.md"
+        path.unlink()
+        return note
+
     def _load_note(self, path: Path) -> Note:
         frontmatter, body = parse_frontmatter(path.read_text(encoding="utf-8"))
         metadata = validate_metadata(frontmatter)

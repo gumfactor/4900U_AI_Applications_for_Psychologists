@@ -8,6 +8,7 @@
     <div class="page-header-actions">
         <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link">Back To Note</a>
         <a href="{{ return_to }}" class="ghost-link">Back To Notes</a>
+        <button type="button" class="ghost-link danger-button" id="delete-note-button">Delete</button>
     </div>
 </section>
 <section class="panel">
@@ -51,6 +52,7 @@
 <script>
 const editNoteForm = document.getElementById("edit-note-form");
 const editNoteFeedback = document.getElementById("edit-note-feedback");
+const deleteNoteButton = document.getElementById("delete-note-button");
 
 function splitCsv(value) {
   return (value || "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -95,6 +97,21 @@ editNoteForm?.addEventListener("submit", async (event) => {
     return;
   }
   window.location.href = `/notes/${data.slug}`;
+});
+
+deleteNoteButton?.addEventListener("click", async () => {
+  if (!window.confirm("Delete this note, its attachments, and its version history?")) {
+    return;
+  }
+  deleteNoteButton.disabled = true;
+  const response = await fetch("/api/notes/{{ note.slug }}", {method: "DELETE"});
+  const data = await response.json();
+  if (!response.ok) {
+    editNoteFeedback.textContent = data.detail || "Could not delete note.";
+    deleteNoteButton.disabled = false;
+    return;
+  }
+  window.location.href = "{{ return_to }}";
 });
 </script>
 {% endblock %}

@@ -95,3 +95,14 @@ def test_note_repository_updates_existing_note() -> None:
         content="Updated content for the repository test.",
     )
     assert updated.metadata.title == "Updated PKB Note"
+
+
+def test_note_repository_deletes_existing_note() -> None:
+    source_base_dir = Path(__file__).resolve().parent.parent
+    copied_base_dir = source_base_dir / "_test_runtime" / "repo_delete_copy"
+    rmtree(copied_base_dir, ignore_errors=True)
+    copytree(source_base_dir / "data", copied_base_dir / "data")
+    repository = NoteRepository(copied_base_dir / "data" / "notes")
+    deleted = repository.delete_note("concept-personal-knowledge-base")
+    assert deleted.slug == "concept-personal-knowledge-base"
+    assert not (copied_base_dir / "data" / "notes" / "concept-personal-knowledge-base.md").exists()

@@ -11,6 +11,7 @@
     </div>
     <div class="page-header-actions">
         <a href="/notes/{{ note.slug }}/edit?return_to={{ return_to | urlencode }}" class="ghost-link">Edit Note</a>
+        <button type="button" class="ghost-link danger-button" data-delete-note data-slug="{{ note.slug }}" data-return-to="{{ return_to }}">Delete</button>
     </div>
 </section>
 <section class="note-detail-layout">
@@ -25,6 +26,22 @@
                 <p>{{ paragraph }}</p>
                 {% endfor %}
             </div>
+            {% endif %}
+        </article>
+
+        <article class="panel note-section-panel">
+            <h3>Attachments</h3>
+            {% if attachment_links %}
+            <ul class="link-list">
+                {% for attachment in attachment_links %}
+                <li>
+                    <a href="{{ attachment.href }}" target="_blank" rel="noreferrer">{{ attachment.label }}</a>
+                    <span class="muted-text">{{ attachment.path }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted-text">No files attached to this note yet.</p>
             {% endif %}
         </article>
 
@@ -117,22 +134,6 @@
         </article>
 
         <article class="panel">
-            <h3>Attachments</h3>
-            {% if attachment_links %}
-            <ul class="link-list">
-                {% for attachment in attachment_links %}
-                <li>
-                    <a href="{{ attachment.href }}" target="_blank" rel="noreferrer">{{ attachment.label }}</a>
-                    <span class="muted-text">{{ attachment.path }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="muted-text">No files attached to this note yet.</p>
-            {% endif %}
-        </article>
-
-        <article class="panel">
             <h3>Version History</h3>
             {% if version_history %}
             <ul class="activity-list">
@@ -166,4 +167,25 @@
         </article>
     </aside>
 </section>
+<script>
+async function deleteNote(slug, returnTo) {
+  const response = await fetch(`/api/notes/${slug}`, {method: "DELETE"});
+  const data = await response.json();
+  if (!response.ok) {
+    window.alert(data.detail || "Could not delete note.");
+    return;
+  }
+  window.location.href = returnTo || "/notes";
+}
+
+document.querySelector("[data-delete-note]")?.addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  if (!window.confirm("Delete this note, its attachments, and its version history?")) {
+    return;
+  }
+  button.disabled = true;
+  await deleteNote(button.dataset.slug, button.dataset.returnTo);
+  button.disabled = false;
+});
+</script>
 {% endblock %}

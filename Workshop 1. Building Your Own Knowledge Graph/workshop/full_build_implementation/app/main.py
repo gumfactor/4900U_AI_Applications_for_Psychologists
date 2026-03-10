@@ -128,6 +128,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "related_logs": related_logs,
                 "related_notes": related_notes,
                 "return_to": _safe_return_to(return_to),
+                "draft_state": _build_draft_state(note),
                 "ai_enabled": settings.ai_enabled,
                 "title": note.metadata.title,
                 "build_explore_href": _build_explore_href,
@@ -596,6 +597,23 @@ def _related_notes_for(notes: list, current_note) -> list:
             scored_notes.append((score, note))
     scored_notes.sort(key=lambda item: (-item[0], item[1].metadata.title.casefold()))
     return [note for _, note in scored_notes[:5]]
+
+
+def _build_draft_state(note) -> dict[str, object]:
+    placeholder_key_points = {"Needs manual editing"}
+    placeholder_evidence = {"Add supporting source"}
+    placeholder_questions = {"What still needs to be checked?"}
+    visible_links = [
+        link for link in note.links if link.title != "Add a linked note" and link.target != "./replace-linked-note.md"
+    ]
+    summary = note.summary.strip()
+    return {
+        "summary_is_placeholder": summary == "Draft content pending review.",
+        "key_points": [item for item in note.key_points if item not in placeholder_key_points],
+        "evidence": [item for item in note.evidence if item not in placeholder_evidence],
+        "open_questions": [item for item in note.open_questions if item not in placeholder_questions],
+        "links": visible_links,
+    }
 
 
 def _note_href_for_log(log_entry) -> str | None:

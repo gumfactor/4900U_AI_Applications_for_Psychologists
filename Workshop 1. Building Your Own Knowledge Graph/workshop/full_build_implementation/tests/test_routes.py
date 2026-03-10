@@ -137,6 +137,28 @@ def test_note_detail_preserves_navigation_context() -> None:
     assert "Related Notes" in response.text
 
 
+def test_note_detail_replaces_placeholder_scaffolding_with_review_callouts() -> None:
+    client = build_test_client()
+    draft_response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Placeholder Draft",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": [],
+            "content": "Unstructured draft body.",
+        },
+    )
+    assert draft_response.status_code == 200
+    detail_response = client.get(f"/notes/{draft_response.json()['slug']}")
+    assert detail_response.status_code == 200
+    assert "Key points still need to be curated." in detail_response.text
+    assert "Needs manual editing" not in detail_response.text
+
+
 def test_source_detail_supports_draft_generation() -> None:
     client = build_test_client()
     response = client.get("/sources/source-pkb-design-principles")

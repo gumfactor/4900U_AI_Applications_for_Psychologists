@@ -38,40 +38,44 @@
 
         <article class="panel note-content-panel">
             <h3>Summary</h3>
+            {% if draft_state.summary_is_placeholder %}
+            <p class="draft-callout">Summary is still in draft form and needs review.</p>
+            {% else %}
             <div class="note-prose">
                 {% for paragraph in note.summary.split('\n\n') if paragraph.strip() %}
                 <p>{{ paragraph }}</p>
                 {% endfor %}
             </div>
+            {% endif %}
         </article>
 
         <article class="panel note-section-panel">
             <h3>Key Points</h3>
-            {% if note.key_points %}
+            {% if draft_state.key_points %}
             <ul class="section-list">
-                {% for item in note.key_points %}<li>{{ item }}</li>{% endfor %}
+                {% for item in draft_state.key_points %}<li>{{ item }}</li>{% endfor %}
             </ul>
             {% else %}
-            <p class="muted-text">No key points added yet.</p>
+            <p class="draft-callout">Key points still need to be curated.</p>
             {% endif %}
         </article>
 
         <article class="panel note-section-panel">
             <h3>Evidence / Sources</h3>
-            {% if note.evidence %}
+            {% if draft_state.evidence %}
             <ul class="section-list">
-                {% for item in note.evidence %}<li>{{ item }}</li>{% endfor %}
+                {% for item in draft_state.evidence %}<li>{{ item }}</li>{% endfor %}
             </ul>
             {% else %}
-            <p class="muted-text">No evidence or sources recorded yet.</p>
+            <p class="draft-callout">Evidence and source support still need review.</p>
             {% endif %}
         </article>
 
         <article class="panel note-section-panel">
             <h3>Linked Notes</h3>
-            {% if note.links %}
+            {% if draft_state.links %}
             <ul class="note-link-list">
-                {% for link in note.links %}
+                {% for link in draft_state.links %}
                 <li>
                     <span class="pill">{{ link.relationship }}</span>
                     <a href="{{ link.target | replace('./', '/notes/') | replace('.md', '') }}">{{ link.title }}</a>
@@ -79,18 +83,18 @@
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="muted-text">No linked notes yet.</p>
+            <p class="draft-callout">Linked notes have not been added yet.</p>
             {% endif %}
         </article>
 
         <article class="panel note-section-panel">
             <h3>Open Questions</h3>
-            {% if note.open_questions %}
+            {% if draft_state.open_questions %}
             <ul class="section-list">
-                {% for item in note.open_questions %}<li>{{ item }}</li>{% endfor %}
+                {% for item in draft_state.open_questions %}<li>{{ item }}</li>{% endfor %}
             </ul>
             {% else %}
-            <p class="muted-text">No open questions listed.</p>
+            <p class="draft-callout">Open questions have not been captured yet.</p>
             {% endif %}
         </article>
     </div>

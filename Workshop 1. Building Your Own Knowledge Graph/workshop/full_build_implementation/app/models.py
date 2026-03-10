@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 RelationshipType = Literal["related_to", "supports", "contradicts", "applies_to", "mentions"]
-AiTaskType = Literal["source_summary", "metadata_extraction", "related_note_suggestion", "question_answering"]
+AiTaskType = Literal["metadata_extraction", "related_note_suggestion", "question_answering"]
 
 
 class NoteMetadata(BaseModel):
@@ -64,7 +64,6 @@ class PromptTemplate(BaseModel):
 class AiTaskRequest(BaseModel):
     task: AiTaskType
     model: str | None = None
-    source_slug: str | None = None
     note_slugs: list[str] = Field(default_factory=list)
     question: str | None = None
     prompt_slug: str | None = None
@@ -158,6 +157,5 @@ class UpdateNoteRequest(BaseModel):
 
 class DashboardSummary(BaseModel):
     total_notes: int
-    total_sources: int
     total_logs: int
     ai_enabled: bool

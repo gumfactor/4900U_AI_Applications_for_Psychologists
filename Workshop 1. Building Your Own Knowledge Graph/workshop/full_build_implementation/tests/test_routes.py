@@ -83,7 +83,11 @@ def test_ai_run_and_save_draft_routes() -> None:
     client = build_test_client()
     ai_response = client.post(
         "/api/ai/run",
-        json={"task": "source_summary", "source_slug": "source-pkb-design-principles", "model": "gemini-2.5-flash-lite"},
+        json={
+            "task": "metadata_extraction",
+            "note_slugs": ["concept-personal-knowledge-base"],
+            "model": "gemini-2.5-flash-lite",
+        },
     )
     assert ai_response.status_code == 200
     draft_response = client.post(
@@ -92,9 +96,9 @@ def test_ai_run_and_save_draft_routes() -> None:
             "title": "Runtime Draft",
             "topics": ["Testing"],
             "people": ["Test User"],
-            "sources": ["PKB Design Principles"],
+            "sources": ["Instructor Notes"],
             "projects": ["Instructor Demo System"],
-            "source_refs": ["data/sources/source-pkb-design-principles.md"],
+            "source_refs": [],
             "tags": ["runtime", "demo"],
             "content": ai_response.json()["output_text"],
         },
@@ -354,13 +358,6 @@ def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> N
     assert "Point one" in detail_response.text
     assert "Evidence / Sources" in detail_response.text
     assert "Needs manual editing" not in detail_response.text
-
-
-def test_source_detail_supports_draft_generation() -> None:
-    client = build_test_client()
-    response = client.get("/sources/source-pkb-design-principles")
-    assert response.status_code == 200
-    assert "Create Draft From Source" in response.text
 
 
 def test_logs_link_to_affected_notes() -> None:

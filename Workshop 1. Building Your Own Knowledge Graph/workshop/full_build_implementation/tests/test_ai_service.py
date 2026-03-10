@@ -6,7 +6,6 @@ from app.services.ai_service import AiService
 from app.services.log_service import LogService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
-from app.services.source_repository import SourceRepository
 
 
 class FakeGeminiClient:
@@ -46,11 +45,10 @@ def build_logs_dir(base_dir: Path, name: str) -> Path:
     return logs_dir
 
 
-def test_ai_service_runs_source_summary() -> None:
+def test_ai_service_runs_metadata_extraction_for_note() -> None:
     base_dir = Path(__file__).resolve().parent.parent
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
-        SourceRepository(base_dir / "data" / "sources"),
         PromptRepository(base_dir / "data" / "prompts"),
         LogService(build_logs_dir(base_dir, "ai-service-summary")),
         FakeGeminiClient(),
@@ -58,10 +56,10 @@ def test_ai_service_runs_source_summary() -> None:
         "gemini-2.5-flash",
     )
     result = service.run_task(
-        AiTaskRequest(task="source_summary", source_slug="source-pkb-design-principles", model="gemini-2.5-flash-lite")
+        AiTaskRequest(task="metadata_extraction", note_slugs=["concept-personal-knowledge-base"], model="gemini-2.5-flash-lite")
     )
-    assert result.task == "source_summary"
-    assert "Source text:" in service.gemini_client.last_prompt
+    assert result.task == "metadata_extraction"
+    assert "Text:" in service.gemini_client.last_prompt
     assert result.log_path is not None
 
 
@@ -69,7 +67,6 @@ def test_ai_service_question_answering_requires_question() -> None:
     base_dir = Path(__file__).resolve().parent.parent
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
-        SourceRepository(base_dir / "data" / "sources"),
         PromptRepository(base_dir / "data" / "prompts"),
         LogService(build_logs_dir(base_dir, "ai-service-question")),
         FakeGeminiClient(),
@@ -91,7 +88,6 @@ def test_ai_service_structures_note_body() -> None:
     fake_client = FakeGeminiClient()
     service = AiService(
         NoteRepository(base_dir / "data" / "notes"),
-        SourceRepository(base_dir / "data" / "sources"),
         PromptRepository(base_dir / "data" / "prompts"),
         LogService(build_logs_dir(base_dir, "ai-service-structure")),
         fake_client,

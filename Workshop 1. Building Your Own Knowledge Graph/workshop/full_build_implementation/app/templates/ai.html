@@ -23,7 +23,6 @@
         <form id="ai-form">
             <label>Task
                 <select name="task">
-                    <option value="source_summary">Source to Note Summary</option>
                     <option value="metadata_extraction">Metadata Extraction</option>
                     <option value="related_note_suggestion">Related Note Suggestion</option>
                     <option value="question_answering">Question Answering</option>
@@ -33,12 +32,6 @@
                 <select name="model">
                     <option value="{{ default_model }}">{{ default_model }}</option>
                     <option value="{{ high_quality_model }}">{{ high_quality_model }}</option>
-                </select>
-            </label>
-            <label>Source
-                <select name="source_slug">
-                    <option value="">None</option>
-                    {% for source in sources %}<option value="{{ source.slug }}">{{ source.title }}</option>{% endfor %}
                 </select>
             </label>
             <label>Notes (Ctrl/Cmd click for multiple)
@@ -111,7 +104,6 @@ aiForm?.addEventListener("submit", async (event) => {
   const payload = {
     task: formData.get("task"),
     model: formData.get("model"),
-    source_slug: formData.get("source_slug") || null,
     note_slugs: noteSlugs,
     question: formData.get("question") || null
   };

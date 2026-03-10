@@ -28,21 +28,18 @@ from app.services.log_service import LogService
 from app.services.note_history_service import NoteHistoryService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
-from app.services.source_repository import SourceRepository
 from app.services.markdown_utils import split_sections
 
 
 def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None = None) -> FastAPI:
     settings = get_settings(base_dir)
     note_repository = NoteRepository(settings.notes_dir)
-    source_repository = SourceRepository(settings.sources_dir)
     prompt_repository = PromptRepository(settings.prompts_dir)
     attachment_service = AttachmentService(settings.attachments_dir)
     log_service = LogService(settings.logs_dir)
     note_history_service = NoteHistoryService(settings.history_dir, settings.notes_dir)
     ai_service = AiService(
         note_repository=note_repository,
-        source_repository=source_repository,
         prompt_repository=prompt_repository,
         log_service=log_service,
         gemini_client=gemini_client or (GeminiClient(settings.gemini_api_key) if settings.ai_enabled else None),
@@ -84,7 +81,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     @app.get("/stats", response_class=HTMLResponse)
     def dashboard(request: Request) -> HTMLResponse:
-        summary = _build_dashboard_summary(settings, note_repository, source_repository, log_service)
+        summary = _build_dashboard_summary(settings, note_repository, log_service)
         return templates.TemplateResponse(
             request,
             "dashboard.html",
@@ -194,12 +191,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             },
         )
 
-    @app.get("/sources", response_class=HTMLResponse)
-    def sources_page(request: Request) -> HTMLResponse:
-        return templates.TemplateResponse(
-            request, "sources.html", {"sources": source_repository.list_sources(), "ai_enabled": settings.ai_enabled, "title": "Sources"}
-        )
-
     @app.get("/explore", response_class=HTMLResponse)
     def explore_page(request: Request, kind: str, value: str) -> HTMLResponse:
         if kind not in {"topic", "tag", "person", "source", "project"}:
@@ -217,24 +208,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "ai_enabled": settings.ai_enabled,
                 "title": f"Explore {value}",
                 "build_explore_href": _build_explore_href,
-            },
-        )
-
-    @app.get("/sources/{slug}", response_class=HTMLResponse)
-    def source_detail(request: Request, slug: str) -> HTMLResponse:
-        try:
-            source = source_repository.get_source(slug)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        return templates.TemplateResponse(
-            request,
-            "source_detail.html",
-            {
-                "source": source,
-                "ai_enabled": settings.ai_enabled,
-                "default_model": settings.default_model,
-                "high_quality_model": settings.high_quality_model,
-                "title": source.title,
             },
         )
 
@@ -275,7 +248,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             "ai.html",
             {
                 "notes": note_repository.list_notes(),
-                "sources": source_repository.list_sources(),
                 "default_model": settings.default_model,
                 "high_quality_model": settings.high_quality_model,
                 "ai_enabled": settings.ai_enabled,
@@ -285,7 +257,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     @app.get("/api/dashboard")
     def dashboard_api() -> DashboardSummary:
-        return _build_dashboard_summary(settings, note_repository, source_repository, log_service)
+        return _build_dashboard_summary(settings, note_repository, log_service)
 
     @app.get("/api/notes")
     def notes_api() -> list[dict]:
@@ -297,10 +269,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             return note_repository.get_note(slug).model_dump()
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    @app.get("/api/sources")
-    def sources_api() -> list[dict]:
-        return [source.model_dump() for source in source_repository.list_sources()]
 
     @app.get("/api/logs")
     def logs_api() -> list[dict]:
@@ -503,15 +471,12 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 def _build_dashboard_summary(
     settings: Settings,
     note_repository: NoteRepository,
-    source_repository: SourceRepository,
     log_service: LogService,
 ) -> DashboardSummary:
     notes = note_repository.list_notes()
-    sources = source_repository.list_sources()
     logs = log_service.list_logs()
     return DashboardSummary(
         total_notes=len(notes),
-        total_sources=len(sources),
         total_logs=len(logs),
         ai_enabled=settings.ai_enabled,
     )

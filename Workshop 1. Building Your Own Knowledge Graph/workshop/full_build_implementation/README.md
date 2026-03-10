@@ -5,13 +5,13 @@ This is the instructor-facing reference implementation for the workshop. It exte
 ## Current Feature Set
 
 - `Notes` is the default landing page.
-- `Stats` summarizes note, source, and log counts.
+- `Stats` summarizes note and log counts.
 - New notes can be created from the slideout editor.
 - When Gemini is available, new-note metadata is inferred from the title and body before final save.
 - Existing notes can be edited in-app.
 - Tags, people, sources, projects, and topics link into connected exploration views.
 - Note detail pages show related AI activity logs and provenance context.
-- The AI Tasks page supports bounded source summary, metadata extraction, related-note suggestion, and question answering.
+- The AI Tasks page supports metadata extraction, related-note suggestion, and question answering.
 
 ## Quick Start
 
@@ -33,4 +33,4 @@ If no Gemini key is configured, the app runs in browse-only mode and disables AI
 3. Open the resulting note and inspect its related AI activity block.
 4. Edit the note in-app.
 5. Click a tag, person, source, or project to move into the connected exploration view.
-6. Use `AI Tasks` for bounded source summary or Q&A.
+6. Use `AI Tasks` for metadata extraction or Q&A.

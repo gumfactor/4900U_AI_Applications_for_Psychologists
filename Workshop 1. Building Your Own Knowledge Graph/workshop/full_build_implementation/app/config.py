@@ -25,7 +25,6 @@ class Settings:
     base_dir: Path
     data_dir: Path
     notes_dir: Path
-    sources_dir: Path
     attachments_dir: Path
     prompts_dir: Path
     logs_dir: Path
@@ -51,7 +50,6 @@ def get_settings(base_dir: Path | None = None) -> Settings:
         base_dir=resolved_base_dir,
         data_dir=data_dir,
         notes_dir=data_dir / "notes",
-        sources_dir=data_dir / "sources",
         attachments_dir=data_dir / "attachments",
         prompts_dir=data_dir / "prompts",
         logs_dir=data_dir / "logs",

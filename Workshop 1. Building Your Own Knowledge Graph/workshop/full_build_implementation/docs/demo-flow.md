@@ -9,10 +9,9 @@
    - related AI logs
 5. Open the note editor and make a visible revision.
 6. Click a tag, person, source, project, or topic chip to move into the connected exploration view.
-7. Open `Stats` and show note/source/log counts.
-8. Open a source document and explain how raw material enters the system.
-9. Open `AI Tasks` and run:
-    - `Source to Note Summary`
+7. Open `Stats` and show note/log counts.
+8. Open `AI Tasks` and run:
+    - `Metadata Extraction`
     - `Related Note Suggestion`
     - `Question Answering`
-10. Open `Logs` and inspect the corresponding AI interaction entries.
+9. Open `Logs` and inspect the corresponding AI interaction entries.

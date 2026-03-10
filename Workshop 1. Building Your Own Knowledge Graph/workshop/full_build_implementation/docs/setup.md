@@ -8,7 +8,7 @@
 4. Copy `.env.example` to `.env` and add `GEMINI_API_KEY` if you want live AI. The app reads `.env` automatically.
 5. Start the server with `uvicorn app.main:app --reload`.
 6. Open `http://127.0.0.1:8000`.
-7. The default landing page is `Notes`; `Stats`, `Sources`, `AI Tasks`, and `Logs` are available in the top nav.
+7. The default landing page is `Notes`; `Stats`, `AI Tasks`, and `Logs` are available in the top nav.
 
 ## Cloud IDE
 

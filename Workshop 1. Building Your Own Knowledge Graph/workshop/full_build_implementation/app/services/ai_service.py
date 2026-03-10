@@ -9,12 +9,10 @@ from app.services.gemini_client import GeminiClient
 from app.services.log_service import LogService
 from app.services.note_repository import NoteRepository
 from app.services.prompt_repository import PromptRepository
-from app.services.source_repository import SourceRepository
 
 
 class AiService:
     TASK_PROMPTS = {
-        "source_summary": "01-source-to-note-summary",
         "metadata_extraction": "02-metadata-extraction",
         "related_note_suggestion": "03-related-note-suggestion",
         "question_answering": "04-question-answering",
@@ -24,7 +22,6 @@ class AiService:
     def __init__(
         self,
         note_repository: NoteRepository,
-        source_repository: SourceRepository,
         prompt_repository: PromptRepository,
         log_service: LogService,
         gemini_client: GeminiClient | None,
@@ -32,7 +29,6 @@ class AiService:
         high_quality_model: str,
     ) -> None:
         self.note_repository = note_repository
-        self.source_repository = source_repository
         self.prompt_repository = prompt_repository
         self.log_service = log_service
         self.gemini_client = gemini_client
@@ -49,23 +45,13 @@ class AiService:
         input_paths: list[str] = []
         blocks: list[str] = [prompt_template.content.strip()]
 
-        if request.task == "source_summary":
-            if not request.source_slug:
-                raise ValueError("source_slug is required for source_summary.")
-            source = self.source_repository.get_source(request.source_slug)
-            input_paths.append(source.path)
-            blocks.extend(["", "Source text:", source.content])
-        elif request.task == "metadata_extraction":
-            if request.source_slug:
-                source = self.source_repository.get_source(request.source_slug)
-                input_paths.append(source.path)
-                blocks.extend(["", "Text:", source.content])
-            elif request.note_slugs:
+        if request.task == "metadata_extraction":
+            if request.note_slugs:
                 note = self.note_repository.get_note(request.note_slugs[0])
                 input_paths.append(note.path)
                 blocks.extend(["", "Text:", note.raw_body])
             else:
-                raise ValueError("metadata_extraction requires a source_slug or one note slug.")
+                raise ValueError("metadata_extraction requires one note slug.")
         elif request.task == "related_note_suggestion":
             notes = self._load_selected_notes(request.note_slugs)
             input_paths.extend(note.path for note in notes)

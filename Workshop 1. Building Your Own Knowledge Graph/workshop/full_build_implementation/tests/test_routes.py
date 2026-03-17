@@ -1,6 +1,7 @@
 from pathlib import Path
 from shutil import copytree
 from shutil import rmtree
+from datetime import date, timedelta
 import re
 
 from fastapi.testclient import TestClient
@@ -72,17 +73,18 @@ def test_notes_page_shows_note_count_and_filters() -> None:
     assert row_notes_page.status_code == 200
     assert searched_notes_page.status_code == 200
     assert dated_notes_page.status_code == 200
-    assert 'class="page-header-count">10<' in notes_page.text
+    total_notes = len(notes.json())
+    assert f'class="page-header-count">{total_notes}<' in notes_page.text
     assert ">notes<" in notes_page.text
     assert "Graph View" in graph_page.text
     assert "Hidden by default" in graph_page.text
     assert "/api/graph" in graph_page.text
     assert ">showing<" in searched_notes_page.text
-    assert ">10 total<" in searched_notes_page.text
+    assert f">{total_notes} total<" in searched_notes_page.text
     assert "AI Provenance Logging" in searched_notes_page.text
     assert '/notes/note-neuroimaging-in-psychopathy?return_to=/notes%3Fcreated_since%3D2026-03-09' in dated_notes_page.text
     assert '/notes/concept-ai-provenance-logging?return_to=/notes%3Fcreated_since%3D2026-03-09' not in dated_notes_page.text
-    assert notes_page.text.count(">Workshop Instructor</option>") == 1
+    assert notes_page.text.count('data-value="Workshop Instructor">Workshop Instructor</button>') == 1
     assert "note-attachment-indicator" in notes_page.text
     assert notes.status_code == 200
     assert len(notes.json()) >= 7
@@ -108,16 +110,19 @@ def test_ai_run_and_save_draft_routes() -> None:
         "/api/notes/save-draft",
         json={
             "title": "Runtime Draft",
+            "status": "in-progress",
             "topics": ["Testing"],
             "people": ["Test User"],
             "sources": ["Instructor Notes"],
             "projects": ["Instructor Demo System"],
             "source_refs": [],
             "tags": ["runtime", "demo"],
+            "due_date": None,
             "content": ai_response.json()["output_text"],
         },
     )
     assert draft_response.status_code == 200
+    assert draft_response.json()["metadata"]["status"] == "in-progress"
     assert draft_response.json()["metadata"]["topics"] == ["Testing"]
     assert draft_response.json()["metadata"]["people"] == ["Test User"]
     assert "runtime" in draft_response.json()["metadata"]["tags"]
@@ -135,12 +140,14 @@ def test_save_draft_structures_plain_note_body_with_ai() -> None:
             "projects": [],
             "source_refs": [],
             "tags": [],
+            "due_date": None,
             "content": "This is a plain paragraph the user typed into New Note.",
         },
     )
     assert response.status_code == 200
     note_response = client.get(f"/api/notes/{response.json()['slug']}")
     assert note_response.status_code == 200
+    assert note_response.json()["metadata"]["status"] == "open"
     assert note_response.json()["key_points"] == ["Point one", "Point two"]
 
 
@@ -156,6 +163,7 @@ def test_save_draft_keeps_existing_structured_key_points() -> None:
             "projects": [],
             "source_refs": [],
             "tags": [],
+            "due_date": None,
             "content": "## Summary\n\nUser summary.\n\n## Key Points\n\n- User point\n\n## Linked Notes\n\nNone yet.\n\n## Evidence / Sources\n\n- None cited yet\n\n## Open Questions\n\n- None yet",
         },
     )
@@ -177,11 +185,13 @@ def test_save_draft_adds_reminder_tag_for_todo_titles() -> None:
             "projects": [],
             "source_refs": [],
             "tags": ["coursework"],
+            "due_date": "2026-03-20",
             "content": "Draft todo content.",
         },
     )
     assert response.status_code == 200
     assert response.json()["metadata"]["tags"] == ["coursework", "runtime", "demo", "reminder"]
+    assert response.json()["metadata"]["due_date"] == "2026-03-20"
 
 
 def test_save_draft_adds_reminder_tag_case_insensitively_for_todo_titles() -> None:
@@ -196,6 +206,7 @@ def test_save_draft_adds_reminder_tag_case_insensitively_for_todo_titles() -> No
             "projects": [],
             "source_refs": [],
             "tags": [],
+            "due_date": None,
             "content": "Draft todo content.",
         },
     )
@@ -215,6 +226,7 @@ def test_save_draft_does_not_duplicate_reminder_tag() -> None:
             "projects": [],
             "source_refs": [],
             "tags": ["Reminder", "coursework"],
+            "due_date": None,
             "content": "Draft todo content.",
         },
     )
@@ -237,6 +249,7 @@ def test_save_draft_does_not_add_reminder_tag_for_non_todo_titles() -> None:
             "projects": [],
             "source_refs": [],
             "tags": ["coursework"],
+            "due_date": None,
             "content": "Draft non-todo content.",
         },
     )
@@ -259,6 +272,7 @@ def test_save_draft_accepts_file_attachments() -> None:
             "attachments": [],
             "attachment_uploads": [{"name": "reading.pdf", "content_base64": "cGRmLWJ5dGVz"}],
             "tags": [],
+            "due_date": None,
             "content": "Attachment-backed note body.",
         },
     )
@@ -297,17 +311,77 @@ def test_edit_note_routes() -> None:
         "/api/notes/concept-personal-knowledge-base",
         json={
             "title": "Edited PKB Note",
+            "status": "done",
             "topics": ["Edited Topic"],
             "people": ["Workshop Instructor"],
             "sources": ["PKB Design Principles"],
             "projects": ["Instructor Demo System"],
             "source_refs": ["data/sources/source-pkb-design-principles.md"],
             "tags": ["edited"],
+            "due_date": "2026-03-25",
             "content": "Edited note body.",
         },
     )
     assert update_response.status_code == 200
     assert update_response.json()["metadata"]["title"] == "Edited PKB Note"
+    assert update_response.json()["metadata"]["status"] == "done"
+    assert update_response.json()["metadata"]["due_date"] == "2026-03-25"
+
+
+def test_notes_page_supports_status_filter() -> None:
+    client = build_test_client()
+    created = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Status Filter Note",
+            "status": "done",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "attachments": [],
+            "tags": [],
+            "due_date": None,
+            "content": "Status filter test content.",
+        },
+    )
+    assert created.status_code == 200
+    response = client.get("/notes?status=done")
+    assert response.status_code == 200
+    assert "All statuses" in response.text
+    assert "Status Filter Note" in response.text
+    assert 'status-done' in response.text
+
+
+def test_note_status_patch_route_updates_status_and_history() -> None:
+    client = build_test_client()
+    created = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Quick Status Note",
+            "status": "open",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "attachments": [],
+            "tags": [],
+            "due_date": None,
+            "content": "Quick status test content.",
+        },
+    )
+    assert created.status_code == 200
+    slug = created.json()["slug"]
+    updated = client.patch(f"/api/notes/{slug}/status", json={"status": "done"})
+    assert updated.status_code == 200
+    assert updated.json()["metadata"]["status"] == "done"
+    detail_response = client.get(f"/notes/{slug}")
+    assert detail_response.status_code == 200
+    assert "Task Status" in detail_response.text
+    assert "Current status:" in detail_response.text
+    assert "Status changed to done." in detail_response.text
 
 
 def test_edit_note_route_merges_existing_and_new_attachments() -> None:
@@ -323,6 +397,7 @@ def test_edit_note_route_merges_existing_and_new_attachments() -> None:
             "source_refs": [],
             "attachments": [],
             "tags": [],
+            "due_date": None,
             "content": "Initial content.",
         },
     )
@@ -339,11 +414,13 @@ def test_edit_note_route_merges_existing_and_new_attachments() -> None:
             "attachments": created.json()["metadata"]["attachments"],
             "attachment_uploads": [{"name": "appendix.txt", "content_base64": "bm90ZXM="}],
             "tags": [],
+            "due_date": "2026-03-22",
             "content": "Updated content.",
         },
     )
     assert updated.status_code == 200
     assert updated.json()["metadata"]["attachments"][0].endswith("/appendix.txt")
+    assert updated.json()["metadata"]["due_date"] == "2026-03-22"
 
 
 def test_delete_note_route_removes_note_attachments_and_history() -> None:
@@ -360,6 +437,7 @@ def test_delete_note_route_removes_note_attachments_and_history() -> None:
             "attachments": [],
             "attachment_uploads": [{"name": "to-delete.txt", "content_base64": "ZGVsZXRl"}],
             "tags": [],
+            "due_date": None,
             "content": "Draft content.",
         },
     )
@@ -404,6 +482,7 @@ def test_note_version_detail_shows_change_summary() -> None:
             "projects": ["Instructor Demo System"],
             "source_refs": ["data/sources/source-pkb-design-principles.md"],
             "tags": ["edited"],
+            "due_date": "2026-03-25",
             "content": "## Summary\n\nUpdated summary.\n\n## Key Points\n\n- Revised point\n\n## Linked Notes\n\n- `related_to`: [AI Provenance Logging](./concept-ai-provenance-logging.md)\n\n## Evidence / Sources\n\n- Updated evidence\n\n## Open Questions\n\n- Updated question",
         },
     )
@@ -458,6 +537,7 @@ def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> N
             "projects": [],
             "source_refs": [],
             "tags": [],
+            "due_date": None,
             "content": "Unstructured draft body.",
         },
     )
@@ -472,3 +552,48 @@ def test_note_detail_shows_ai_structured_sections_for_plain_new_note_text() -> N
     assert main_column.index("<h3>Key Points</h3>") < main_column.index("<h3>Attachments</h3>")
     assert "Evidence / Sources" not in detail_response.text
     assert "Needs manual editing" not in detail_response.text
+
+
+def test_notes_page_supports_due_today_upcoming_and_overdue_views() -> None:
+    client = build_test_client()
+    today = date.today()
+    overdue_date = (today - timedelta(days=1)).isoformat()
+    today_date = today.isoformat()
+    upcoming_date = (today + timedelta(days=3)).isoformat()
+    created_notes = [
+        ("TODO: Overdue Reminder", overdue_date, ["reminder"]),
+        ("TODO: Today Reminder", today_date, ["reminder"]),
+        ("TODO: Upcoming Reminder", upcoming_date, ["reminder"]),
+        ("Scheduled But Not Reminder", overdue_date, ["planning"]),
+    ]
+    for title, due_date, tags in created_notes:
+        response = client.post(
+            "/api/notes/save-draft",
+            json={
+                "title": title,
+                "topics": [],
+                "people": [],
+                "sources": [],
+                "projects": [],
+                "source_refs": [],
+                "attachments": [],
+                "tags": tags,
+                "due_date": due_date,
+                "content": "Reminder view test content.",
+            },
+        )
+        assert response.status_code == 200
+
+    due_today = client.get("/notes?due_bucket=today")
+    upcoming = client.get("/notes?due_bucket=upcoming")
+    overdue = client.get("/notes?due_bucket=overdue")
+
+    assert "Reminder Queue" in due_today.text
+    assert "TODO: Today Reminder" in due_today.text
+    assert "TODO: Overdue Reminder" not in due_today.text
+    assert "TODO: Upcoming Reminder" not in due_today.text
+
+    assert "TODO: Upcoming Reminder" in upcoming.text
+    assert "TODO: Today Reminder" not in upcoming.text
+    assert "Scheduled But Not Reminder" not in overdue.text
+    assert "TODO: Overdue Reminder" in overdue.text

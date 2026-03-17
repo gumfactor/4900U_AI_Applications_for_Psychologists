@@ -10,6 +10,8 @@ This is the instructor-facing reference implementation for the workshop. It exte
 - New notes can be created from the slideout editor.
 - When Gemini is available, new-note metadata is inferred from the title and body before final save.
 - Existing notes can be edited in-app.
+- Notes can store optional due dates.
+- The notes browser includes reminder-focused `Due Today`, `Upcoming`, and `Overdue` views.
 - Tags, people, sources, projects, and topics link into connected exploration views.
 - Note detail pages show related notes, metadata, and version history.
 - The `Multi Note Queries` page supports question answering across one or more selected notes.

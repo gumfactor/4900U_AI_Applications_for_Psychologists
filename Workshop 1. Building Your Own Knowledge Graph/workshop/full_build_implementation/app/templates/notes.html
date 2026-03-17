@@ -17,9 +17,16 @@
         </p>
     </div>
     <div class="page-header-actions compact-actions">
+        <div class="view-toggle" role="group" aria-label="Reminder views">
+            <a href="{{ build_notes_href(active_filters, tag='', due_bucket='') }}" class="toggle-chip{% if not active_filters.due_bucket and active_filters.tag != 'reminder' %} active{% endif %}">All Notes</a>
+            <a href="{{ build_notes_href(active_filters, tag='reminder', due_bucket='') }}" class="toggle-chip{% if active_filters.tag == 'reminder' and not active_filters.due_bucket %} active{% endif %}">Reminder Queue</a>
+            <a href="{{ build_notes_href(active_filters, tag='', due_bucket='today') }}" class="toggle-chip{% if active_filters.due_bucket == 'today' %} active{% endif %}">Due Today</a>
+            <a href="{{ build_notes_href(active_filters, tag='', due_bucket='upcoming') }}" class="toggle-chip{% if active_filters.due_bucket == 'upcoming' %} active{% endif %}">Upcoming</a>
+            <a href="{{ build_notes_href(active_filters, tag='', due_bucket='overdue') }}" class="toggle-chip{% if active_filters.due_bucket == 'overdue' %} active{% endif %}">Overdue</a>
+        </div>
         <div class="view-toggle" role="group" aria-label="Toggle note layout">
-            <a href="/notes?q={{ active_filters.q | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&created_since={{ active_filters.created_since | urlencode }}&view=grid" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
-            <a href="/notes?q={{ active_filters.q | urlencode }}&topic={{ active_filters.topic | urlencode }}&tag={{ active_filters.tag | urlencode }}&person={{ active_filters.person | urlencode }}&source={{ active_filters.source | urlencode }}&project={{ active_filters.project | urlencode }}&created_since={{ active_filters.created_since | urlencode }}&view=row" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
+            <a href="{{ build_notes_href(active_filters, view='grid') }}" class="toggle-chip{% if view_mode == 'grid' %} active{% endif %}">Grid</a>
+            <a href="{{ build_notes_href(active_filters, view='row') }}" class="toggle-chip{% if view_mode == 'row' %} active{% endif %}">Row</a>
         </div>
     </div>
 </section>
@@ -125,11 +132,31 @@
                         </div>
                     </div>
                 </div>
+                <div class="filter-popover" data-filter-control>
+                    <input name="status" type="hidden" value="{{ active_filters.status }}" data-filter-input>
+                    <button type="button" class="filter-trigger{% if active_filters.status %} is-active{% endif %}" data-filter-trigger aria-haspopup="dialog" aria-expanded="false">
+                        <span class="filter-trigger-label">Status</span>
+                        <span class="filter-trigger-value" data-filter-value>{{ active_filters.status | replace('-', ' ') | title }}</span>
+                    </button>
+                    <div class="filter-menu" data-filter-menu hidden>
+                        <div class="filter-menu-head">
+                            <strong>Status</strong>
+                            <button type="button" class="filter-menu-clear" data-filter-clear>Clear</button>
+                        </div>
+                        <div class="filter-option-list">
+                            <button type="button" class="filter-option{% if not active_filters.status %} is-selected{% endif %}" data-filter-option data-value="">All statuses</button>
+                            {% for value in filter_options.statuses %}
+                            <button type="button" class="filter-option{% if active_filters.status == value %} is-selected{% endif %}" data-filter-option data-value="{{ value }}">{{ value | replace('-', ' ') | title }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
             <label class="filter-field filter-field-date">Created Since
                 <input name="created_since" type="date" value="{{ active_filters.created_since }}">
             </label>
         </div>
+        <input name="due_bucket" type="hidden" value="{{ active_filters.due_bucket }}">
         <input name="view" type="hidden" value="{{ view_mode }}">
         <div class="filter-actions">
             <button type="submit" class="inline-button">Filter</button>
@@ -145,11 +172,17 @@
         {% set people = note.metadata.people | sort %}
         {% set sources = note.metadata.sources | sort %}
         {% set projects = note.metadata.projects | sort %}
+        {% set due_state = build_due_state(note.metadata) %}
         {% set has_attachments = note.metadata.attachments %}
+        {% set status_label = note.metadata.status | replace('-', ' ') | title %}
         {% if view_mode == 'row' %}
         <div class="panel-head note-row-header">
             <h3 class="note-card-title">
                 <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a>
+                <span class="status-badge status-{{ note.metadata.status }}">{{ status_label }}</span>
+                {% if due_state %}
+                <span class="due-badge {{ due_state.bucket }}">{{ due_state.label }}</span>
+                {% endif %}
                 {% if has_attachments %}
                 <span class="note-attachment-indicator" title="This note has attachments" aria-label="This note has attachments">
                     <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -213,12 +246,16 @@
         </div>
         <div class="meta-row note-row-meta">
             <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link note-preview-link">Continue reading</a>
-            <span>Updated: {{ note.metadata.updated }}</span>
+            <span>{% if note.metadata.due_date %}Due: {{ note.metadata.due_date }} · {% endif %}Updated: {{ note.metadata.updated }}</span>
         </div>
         {% else %}
         <div class="panel-head">
             <h3 class="note-card-title">
                 <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}">{{ note.metadata.title }}</a>
+                <span class="status-badge status-{{ note.metadata.status }}">{{ status_label }}</span>
+                {% if due_state %}
+                <span class="due-badge {{ due_state.bucket }}">{{ due_state.label }}</span>
+                {% endif %}
                 {% if has_attachments %}
                 <span class="note-attachment-indicator" title="This note has attachments" aria-label="This note has attachments">
                     <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -280,7 +317,7 @@
             <a href="/notes/{{ note.slug }}?return_to={{ return_to | urlencode }}" class="ghost-link note-preview-link">Continue reading</a>
         </div>
         <div class="meta-row">
-            <span>Updated: {{ note.metadata.updated }}</span>
+            <span>{% if note.metadata.due_date %}Due: {{ note.metadata.due_date }} · {% endif %}Updated: {{ note.metadata.updated }}</span>
         </div>
         {% endif %}
     </article>

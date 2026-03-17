@@ -4,7 +4,10 @@
     <div>
         <p class="detail-breadcrumb"><a href="{{ return_to }}"><span aria-hidden="true">&larr;</span> Back to notes</a></p>
         <h2>{{ note.metadata.title }}</h2>
+        {% set due_state = build_due_state(note.metadata) %}
         <div class="note-title-meta">
+            <span class="status-badge status-{{ note.metadata.status }}" data-note-status-badge>{{ note.metadata.status | replace('-', ' ') | title }}</span>
+            {% if due_state %}<span class="due-badge {{ due_state.bucket }}">{{ due_state.label }}</span>{% endif %}
             <span>Updated {{ note.metadata.updated }}</span>
             <span>Created {{ note.metadata.created }}</span>
         </div>
@@ -73,6 +76,19 @@
 
     <aside class="note-sidebar">
         <article class="panel">
+            <h3>Task Status</h3>
+            <div class="status-panel">
+                <p class="muted-text">Current status: <strong data-note-status-label>{{ note.metadata.status | replace('-', ' ') | title }}</strong></p>
+                <div class="status-action-group">
+                    <button type="button" class="ghost-link status-action{% if note.metadata.status == 'open' %} is-active{% endif %}" data-status-action data-status-value="open">Open</button>
+                    <button type="button" class="ghost-link status-action{% if note.metadata.status == 'in-progress' %} is-active{% endif %}" data-status-action data-status-value="in-progress">In Progress</button>
+                    <button type="button" class="ghost-link status-action{% if note.metadata.status == 'done' %} is-active{% endif %}" data-status-action data-status-value="done">Done</button>
+                </div>
+                <p class="muted-text" data-status-feedback></p>
+            </div>
+        </article>
+
+        <article class="panel">
             <h3>Ask a Question</h3>
             {% if ai_enabled %}
             <form data-note-question-form data-note-slug="{{ note.slug }}">
@@ -100,6 +116,18 @@
 
         <article class="panel">
             <h3>Connections</h3>
+            <div class="sidebar-section">
+                <span class="attribute-label">Status</span>
+                <div class="attribute-chip-group">
+                    <span class="status-badge status-{{ note.metadata.status }}" data-note-status-badge>{{ note.metadata.status | replace('-', ' ') | title }}</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <span class="attribute-label">Due Date</span>
+                <div class="attribute-chip-group">
+                    {% if due_state %}<span class="due-badge {{ due_state.bucket }}">{{ due_state.label }}</span>{% else %}<span class="muted-text">n/a</span>{% endif %}
+                </div>
+            </div>
             <div class="sidebar-section">
                 <span class="attribute-label">Topics</span>
                 <div class="attribute-chip-group">
@@ -164,6 +192,8 @@
                 <summary>Show Metadata</summary>
                 <ul class="clean-list">
                     <li><span>ID</span><strong>{{ note.metadata.id }}</strong></li>
+                    <li><span>Status</span><strong>{{ note.metadata.status | replace("-", " ") | title }}</strong></li>
+                    <li><span>Due Date</span><strong>{{ note.metadata.due_date or "n/a" }}</strong></li>
                     <li><span>Source Refs</span><strong>{{ note.metadata.source_refs | join(", ") or "n/a" }}</strong></li>
                     <li><span>Attachments</span><strong>{{ note.metadata.attachments | join(", ") or "n/a" }}</strong></li>
                 </ul>
@@ -212,6 +242,45 @@ document.querySelector("[data-note-question-form]")?.addEventListener("submit", 
   const data = await response.json();
   output.textContent = response.ok ? data.output_text : (data.detail || "Question answering failed.");
   submitButton.disabled = false;
+});
+
+const statusButtons = Array.from(document.querySelectorAll("[data-status-action]"));
+const statusFeedback = document.querySelector("[data-status-feedback]");
+const statusLabel = document.querySelector("[data-note-status-label]");
+const statusBadges = Array.from(document.querySelectorAll("[data-note-status-badge]"));
+
+statusButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    statusFeedback.textContent = "Updating status...";
+    statusButtons.forEach((candidate) => {
+      candidate.disabled = true;
+    });
+    const response = await fetch("/api/notes/{{ note.slug }}/status", {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({status: button.dataset.statusValue})
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      statusFeedback.textContent = data.detail || "Could not update status.";
+      statusButtons.forEach((candidate) => {
+        candidate.disabled = false;
+      });
+      return;
+    }
+    const nextLabel = (data.metadata.status || "").replace("-", " ").replace(/\b\w/g, (match) => match.toUpperCase());
+    statusLabel.textContent = nextLabel;
+    statusBadges.forEach((badge) => {
+      badge.textContent = nextLabel;
+      badge.classList.remove("status-open", "status-in-progress", "status-done");
+      badge.classList.add(`status-${data.metadata.status}`);
+    });
+    statusFeedback.textContent = "Status updated.";
+    statusButtons.forEach((candidate) => {
+      candidate.disabled = false;
+      candidate.classList.toggle("is-active", candidate.dataset.statusValue === data.metadata.status);
+    });
+  });
 });
 </script>
 {% endblock %}

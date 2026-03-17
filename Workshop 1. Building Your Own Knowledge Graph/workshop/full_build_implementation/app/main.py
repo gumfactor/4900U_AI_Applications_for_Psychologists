@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 import re
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlencode
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -61,7 +61,9 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
+        status: str | None = None,
         created_since: str | None = None,
+        due_bucket: str | None = None,
         view: str | None = None,
     ) -> HTMLResponse:
         return _render_notes_page(
@@ -75,7 +77,9 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             person=person,
             source=source,
             project=project,
+            status=status,
             created_since=created_since,
+            due_bucket=due_bucket,
             view=view,
         )
 
@@ -88,7 +92,9 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         person: str | None = None,
         source: str | None = None,
         project: str | None = None,
+        status: str | None = None,
         created_since: str | None = None,
+        due_bucket: str | None = None,
         view: str | None = None,
     ) -> HTMLResponse:
         return _render_notes_page(
@@ -102,7 +108,9 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             person=person,
             source=source,
             project=project,
+            status=status,
             created_since=created_since,
+            due_bucket=due_bucket,
             view=view,
         )
 
@@ -127,6 +135,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "ai_enabled": settings.ai_enabled,
                 "title": note.metadata.title,
                 "build_explore_href": _build_explore_href,
+                "build_due_state": _build_due_state,
             },
         )
 
@@ -156,6 +165,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 "ai_enabled": settings.ai_enabled,
                 "title": f"{version.title} history",
                 "build_explore_href": _build_explore_href,
+                "build_due_state": _build_due_state,
             },
         )
 
@@ -319,6 +329,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         )
         note = note_repository.save_draft(
             title=request_body.title,
+            status=request_body.status,
             topics=topics,
             people=people,
             sources=sources,
@@ -326,10 +337,10 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             source_refs=source_refs,
             attachments=attachments,
             tags=tags,
+            due_date=request_body.due_date,
             content=structured_content,
         )
         note_history_service.record_version(note, action="created")
-            status=request_body.status,
         return note.model_dump()
 
     @app.put("/api/notes/{slug}")
@@ -337,7 +348,6 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         try:
             existing_note = note_repository.get_note(slug)
             if not note_history_service.list_versions(slug):
-            due_date=request_body.due_date,
                 note_history_service.record_version(existing_note, action="imported")
             attachments = _merge_metadata_lists(
                 request_body.attachments,
@@ -346,6 +356,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             note = note_repository.update_note(
                 slug=slug,
                 title=request_body.title,
+                status=request_body.status,
                 topics=request_body.topics,
                 people=request_body.people,
                 sources=request_body.sources,
@@ -353,18 +364,43 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 source_refs=request_body.source_refs,
                 attachments=attachments,
                 tags=request_body.tags,
+                due_date=request_body.due_date,
                 content=request_body.content,
             )
         except FileNotFoundError as exc:
-                status=request_body.status,
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+        if _notes_differ(existing_note, note):
+            note_history_service.record_version(note, action="updated")
+        return note.model_dump()
+
+    @app.patch("/api/notes/{slug}/status")
+    def update_note_status(slug: str, request_body: dict[str, str]) -> dict:
+        try:
+            existing_note = note_repository.get_note(slug)
+            note = note_repository.update_note(
+                slug=slug,
+                title=existing_note.metadata.title,
+                status=str(request_body.get("status", "")).strip(),
+                topics=existing_note.metadata.topics,
+                people=existing_note.metadata.people,
+                sources=existing_note.metadata.sources,
+                projects=existing_note.metadata.projects,
+                source_refs=existing_note.metadata.source_refs,
+                attachments=existing_note.metadata.attachments,
+                tags=existing_note.metadata.tags,
+                due_date=existing_note.metadata.due_date,
+                content=existing_note.raw_body,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         if _notes_differ(existing_note, note):
             note_history_service.record_version(note, action="updated")
         return note.model_dump()
 
     @app.delete("/api/notes/{slug}")
     def delete_note(slug: str) -> dict:
-                due_date=request_body.due_date,
         try:
             note = note_repository.delete_note(slug)
         except FileNotFoundError as exc:
@@ -407,7 +443,9 @@ def _render_notes_page(
     person: str | None = None,
     source: str | None = None,
     project: str | None = None,
+    status: str | None = None,
     created_since: str | None = None,
+    due_bucket: str | None = None,
     view: str | None = None,
 ) -> HTMLResponse:
     view_mode = view if view in {"grid", "row"} else "grid"
@@ -435,8 +473,12 @@ def _render_notes_page(
         notes = [note for note in notes if source in note.metadata.sources]
     if project:
         notes = [note for note in notes if project in note.metadata.projects]
+    if status:
+        notes = [note for note in notes if note.metadata.status == status]
     if created_since:
         notes = [note for note in notes if note.metadata.created >= created_since]
+    if due_bucket:
+        notes = [note for note in notes if _matches_due_bucket(note, due_bucket)]
     return templates.TemplateResponse(
         request,
         "notes.html",
@@ -449,7 +491,9 @@ def _render_notes_page(
             "title": "Notes",
             "view_mode": view_mode,
             "build_explore_href": _build_explore_href,
+            "build_notes_href": _build_notes_href,
             "build_note_preview": _build_note_preview,
+            "build_due_state": _build_due_state,
             "active_filters": {
                 "q": q or "",
                 "topic": topic or "",
@@ -457,7 +501,9 @@ def _render_notes_page(
                 "person": person or "",
                 "source": source or "",
                 "project": project or "",
+                "status": status or "",
                 "created_since": created_since or "",
+                "due_bucket": due_bucket or "",
                 "view": view_mode,
             },
             "return_to": current_path,
@@ -489,6 +535,13 @@ def _note_slug_from_title(title: str) -> str:
     return f"note-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-') or 'untitled-note'}"
 
 
+def _build_notes_href(active_filters: dict[str, str], **updates: str) -> str:
+    params = dict(active_filters)
+    params.update({key: value for key, value in updates.items() if value is not None})
+    filtered_params = {key: value for key, value in params.items() if value}
+    return f"/notes?{urlencode(filtered_params)}" if filtered_params else "/notes"
+
+
 def _build_attachment_links(attachment_paths: list[str], attachment_service: AttachmentService) -> list[dict[str, str]]:
     return [
         {
@@ -509,6 +562,24 @@ def _build_note_preview(text: str) -> str:
     return preview or cleaned
 
 
+def _build_due_state(metadata, reference_date: date | None = None) -> dict[str, str] | None:
+    due_date = getattr(metadata, "due_date", None)
+    if not due_date:
+        return None
+    try:
+        parsed_due_date = date.fromisoformat(due_date)
+    except ValueError:
+        return {"date": due_date, "bucket": "scheduled", "label": f"Due {due_date}"}
+    today = reference_date or date.today()
+    if _has_tag(getattr(metadata, "tags", []), "reminder"):
+        if parsed_due_date < today:
+            return {"date": due_date, "bucket": "overdue", "label": f"Overdue since {due_date}"}
+        if parsed_due_date == today:
+            return {"date": due_date, "bucket": "today", "label": f"Due today ({due_date})"}
+        return {"date": due_date, "bucket": "upcoming", "label": f"Upcoming ({due_date})"}
+    return {"date": due_date, "bucket": "scheduled", "label": f"Due {due_date}"}
+
+
 def _build_filter_options(notes: list) -> dict[str, list[str]]:
     topics = _collect_sorted_values(notes, "topics")
     tags = _collect_sorted_values(notes, "tags")
@@ -516,12 +587,27 @@ def _build_filter_options(notes: list) -> dict[str, list[str]]:
     sources = _collect_sorted_values(notes, "sources")
     projects = _collect_sorted_values(notes, "projects")
     return {
+        "statuses": ["open", "in-progress", "done"],
         "topics": topics,
         "tags": tags,
         "people": people,
         "sources": sources,
         "projects": projects,
     }
+
+
+def _has_tag(tags: list[str], target: str) -> bool:
+    return any(str(tag).strip().casefold() == target.casefold() for tag in tags)
+
+
+def _matches_due_bucket(note, due_bucket: str) -> bool:
+    normalized_bucket = (due_bucket or "").strip().casefold()
+    if normalized_bucket not in {"today", "upcoming", "overdue"}:
+        return True
+    if not _has_tag(note.metadata.tags, "reminder"):
+        return False
+    due_state = _build_due_state(note.metadata)
+    return bool(due_state and due_state["bucket"] == normalized_bucket)
 
 
 def _collect_note_type_options(graph: GraphResponse) -> list[str]:
@@ -636,6 +722,15 @@ def _summarize_version_change(previous_version, current_version) -> list[str]:
     changes: list[str] = []
     if previous_note.metadata.title != current_note.metadata.title:
         changes.append(f"Retitled to {current_note.metadata.title}.")
+    if previous_note.metadata.status != current_note.metadata.status:
+        changes.append(f"Status changed to {current_note.metadata.status}.")
+    previous_due_date = previous_note.metadata.due_date or ""
+    current_due_date = current_note.metadata.due_date or ""
+    if previous_due_date != current_due_date:
+        if current_due_date:
+            changes.append(f"Due date set to {current_due_date}.")
+        else:
+            changes.append("Due date removed.")
     for label, attribute_name in (
         ("topics", "topics"),
         ("tags", "tags"),

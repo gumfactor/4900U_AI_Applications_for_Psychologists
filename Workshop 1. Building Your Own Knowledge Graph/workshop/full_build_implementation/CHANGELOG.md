@@ -34,6 +34,32 @@ This file is intended to be a readable historical summary of product, engineerin
 ## 2026-03-17
 
 ### Added
+- Persisted task statuses for notes with `open`, `in-progress`, and `done` values.
+- Status badges and status filtering in the notes browser.
+- Quick task status updates from the note detail page.
+
+### Changed
+- Note create, edit, and AI draft-save flows now capture task status alongside other note metadata.
+
+### Documented
+- Marked `Task Status Workflow` complete in `todo.md`.
+
+## 2026-03-17
+
+### Added
+- Optional due dates for notes across create, edit, and AI draft-save flows.
+- Reminder-focused notes browser views for `Due Today`, `Upcoming`, and `Overdue`.
+
+### Changed
+- Note cards and note detail pages now surface due date status directly in the UI.
+- The roadmap now marks `Due Dates and Reminder Views` as completed.
+
+### Documented
+- Updated the project README and historical tracking files to reflect the new due date workflow.
+
+## 2026-03-17
+
+### Added
 - `WORKLOG.md` to maintain a detailed session-by-session historical work record.
 - `CHANGELOG.md` to maintain a summarized project history of notable changes.
 

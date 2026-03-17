@@ -312,6 +312,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             tags = request_body.tags
             source_refs = request_body.source_refs
             attachments = request_body.attachments
+        tags = _apply_todo_reminder_tag(request_body.title, tags)
         attachments = _merge_metadata_lists(
             attachments,
             attachment_service.save_uploads(_note_slug_from_title(request_body.title), request_body.attachment_uploads),
@@ -465,11 +466,19 @@ def _merge_metadata_lists(primary: list[str], secondary: object) -> list[str]:
     seen: set[str] = set()
     for candidate in [*primary, *(secondary if isinstance(secondary, list) else [])]:
         cleaned = str(candidate).strip()
-        if not cleaned or cleaned in seen:
+        normalized = cleaned.casefold()
+        if not cleaned or normalized in seen:
             continue
-        seen.add(cleaned)
+        seen.add(normalized)
         merged.append(cleaned)
     return merged
+
+
+def _apply_todo_reminder_tag(title: str, tags: list[str]) -> list[str]:
+    normalized_tags = _merge_metadata_lists(tags, [])
+    if not re.match(r"^todo:\s*", title.strip(), re.IGNORECASE):
+        return normalized_tags
+    return _merge_metadata_lists(normalized_tags, ["reminder"])
 
 
 def _note_slug_from_title(title: str) -> str:

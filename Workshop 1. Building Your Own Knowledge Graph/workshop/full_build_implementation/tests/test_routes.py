@@ -165,6 +165,86 @@ def test_save_draft_keeps_existing_structured_key_points() -> None:
     assert note_response.json()["key_points"] == ["User point"]
 
 
+def test_save_draft_adds_reminder_tag_for_todo_titles() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "TODO: Finish slides",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": ["coursework"],
+            "content": "Draft todo content.",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["metadata"]["tags"] == ["coursework", "runtime", "demo", "reminder"]
+
+
+def test_save_draft_adds_reminder_tag_case_insensitively_for_todo_titles() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "todo: finish slides",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": [],
+            "content": "Draft todo content.",
+        },
+    )
+    assert response.status_code == 200
+    assert "reminder" in response.json()["metadata"]["tags"]
+
+
+def test_save_draft_does_not_duplicate_reminder_tag() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "TODO: Finish slides",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": ["Reminder", "coursework"],
+            "content": "Draft todo content.",
+        },
+    )
+    assert response.status_code == 200
+    tags = response.json()["metadata"]["tags"]
+    assert tags.count("Reminder") == 1
+    assert "reminder" not in tags
+    assert "coursework" in tags
+
+
+def test_save_draft_does_not_add_reminder_tag_for_non_todo_titles() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/api/notes/save-draft",
+        json={
+            "title": "Finish slides",
+            "topics": [],
+            "people": [],
+            "sources": [],
+            "projects": [],
+            "source_refs": [],
+            "tags": ["coursework"],
+            "content": "Draft non-todo content.",
+        },
+    )
+    assert response.status_code == 200
+    assert "reminder" not in response.json()["metadata"]["tags"]
+    assert "coursework" in response.json()["metadata"]["tags"]
+
+
 def test_save_draft_accepts_file_attachments() -> None:
     client = build_test_client()
     response = client.post(

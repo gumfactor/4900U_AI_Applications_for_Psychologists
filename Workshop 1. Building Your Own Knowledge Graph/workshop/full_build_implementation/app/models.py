@@ -9,11 +9,13 @@ RelationshipType = Literal["related_to", "supports", "contradicts", "applies_to"
 AiTaskType = Literal["question_answering"]
 GraphEdgeFamily = Literal["explicit", "metadata"]
 NoteType = Literal["concept", "source", "person", "project", "note"]
+NoteStatus = Literal["open", "in-progress", "done"]
 
 
 class NoteMetadata(BaseModel):
     id: str
     title: str
+    status: NoteStatus = "open"
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -21,6 +23,7 @@ class NoteMetadata(BaseModel):
     tags: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
     attachments: list[str] = Field(default_factory=list)
+    due_date: str | None = None
     created: str
     updated: str
 
@@ -101,6 +104,7 @@ class NoteVersion(BaseModel):
 
 class SaveDraftRequest(BaseModel):
     title: str
+    status: NoteStatus = "open"
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -109,6 +113,7 @@ class SaveDraftRequest(BaseModel):
     attachments: list[str] = Field(default_factory=list)
     attachment_uploads: list[AttachmentUpload] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
+    due_date: str | None = None
     content: str
 
 
@@ -132,6 +137,7 @@ class InferMetadataResponse(BaseModel):
 
 class UpdateNoteRequest(BaseModel):
     title: str
+    status: NoteStatus = "open"
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -140,6 +146,7 @@ class UpdateNoteRequest(BaseModel):
     attachments: list[str] = Field(default_factory=list)
     attachment_uploads: list[AttachmentUpload] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
+    due_date: str | None = None
     content: str
 
 

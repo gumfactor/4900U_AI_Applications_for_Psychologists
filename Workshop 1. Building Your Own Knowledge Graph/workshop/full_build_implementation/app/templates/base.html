@@ -44,6 +44,16 @@
                 <label>Projects
                     <input name="projects" type="text" placeholder="Optional override; AI will suggest projects">
                 </label>
+                <label>Due Date
+                    <input name="due_date" type="date">
+                </label>
+                <label>Status
+                    <select name="status">
+                        <option value="open">Open</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="done">Done</option>
+                    </select>
+                </label>
                 <label>Tags
                     <input name="tags" type="text" placeholder="Optional override; AI will suggest tags">
                 </label>
@@ -104,6 +114,8 @@
             people: splitCsv(formData.get("people")),
             sources: splitCsv(formData.get("sources")),
             projects: splitCsv(formData.get("projects")),
+            due_date: formData.get("due_date") || null,
+            status: formData.get("status") || "open",
             tags: splitCsv(formData.get("tags")),
             source_refs: splitCsv(formData.get("source_refs")),
             attachments: splitCsv(formData.get("attachments")),

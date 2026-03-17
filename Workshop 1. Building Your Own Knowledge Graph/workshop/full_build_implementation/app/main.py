@@ -329,6 +329,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
             content=structured_content,
         )
         note_history_service.record_version(note, action="created")
+            status=request_body.status,
         return note.model_dump()
 
     @app.put("/api/notes/{slug}")
@@ -336,6 +337,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
         try:
             existing_note = note_repository.get_note(slug)
             if not note_history_service.list_versions(slug):
+            due_date=request_body.due_date,
                 note_history_service.record_version(existing_note, action="imported")
             attachments = _merge_metadata_lists(
                 request_body.attachments,
@@ -354,6 +356,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
                 content=request_body.content,
             )
         except FileNotFoundError as exc:
+                status=request_body.status,
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         if _notes_differ(existing_note, note):
             note_history_service.record_version(note, action="updated")
@@ -361,6 +364,7 @@ def create_app(base_dir: Path | None = None, gemini_client: GeminiClient | None 
 
     @app.delete("/api/notes/{slug}")
     def delete_note(slug: str) -> dict:
+                due_date=request_body.due_date,
         try:
             note = note_repository.delete_note(slug)
         except FileNotFoundError as exc:

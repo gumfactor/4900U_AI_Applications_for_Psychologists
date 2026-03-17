@@ -51,6 +51,14 @@
                 <label>People <input name="people" type="text" placeholder="Comma separated people"></label>
                 <label>Sources <input name="sources" type="text" placeholder="Comma separated source labels"></label>
                 <label>Projects <input name="projects" type="text" placeholder="Comma separated projects"></label>
+                <label>Due Date <input name="due_date" type="date"></label>
+                <label>Status
+                    <select name="status">
+                        <option value="open">Open</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="done">Done</option>
+                    </select>
+                </label>
                 <label>Tags (comma separated) <input name="tags" type="text"></label>
                 <label>Source refs (comma separated) <input name="source_refs" type="text"></label>
                 <button type="submit">Save Draft</button>
@@ -79,6 +87,8 @@ async function saveDraft(formData) {
     people: splitCsv(formData.get("people")),
     sources: splitCsv(formData.get("sources")),
     projects: splitCsv(formData.get("projects")),
+    due_date: formData.get("due_date") || null,
+    status: formData.get("status") || "open",
     tags: splitCsv(formData.get("tags")),
     source_refs: splitCsv(formData.get("source_refs")),
     content: latestOutput

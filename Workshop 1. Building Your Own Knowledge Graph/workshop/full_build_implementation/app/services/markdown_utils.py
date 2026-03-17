@@ -75,14 +75,16 @@ def extract_links(linked_notes_markdown: str) -> list[NoteLink]:
 
 def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     normalized = dict(frontmatter)
-    normalized.pop("status", None)
     normalized.pop("ai_assisted", None)
     normalized.pop("human_reviewed", None)
     for key in ("created", "updated"):
         if key in normalized and normalized[key] is not None:
             normalized[key] = str(normalized[key])
+    if "due_date" in normalized and normalized["due_date"] is not None:
+        normalized["due_date"] = str(normalized["due_date"])
     legacy_type = normalized.pop("type", None)
     legacy_topic = normalized.pop("topic", None)
+    normalized.setdefault("status", "open")
     normalized.setdefault("topics", [])
     normalized.setdefault("people", [])
     normalized.setdefault("sources", [])
@@ -90,6 +92,7 @@ def validate_metadata(frontmatter: dict[str, Any]) -> NoteMetadata:
     normalized.setdefault("tags", [])
     normalized.setdefault("source_refs", [])
     normalized.setdefault("attachments", [])
+    normalized.setdefault("due_date", None)
     if legacy_topic:
         normalized["topics"] = [str(legacy_topic), *normalized["topics"]]
     normalized.pop("note_kind", None)
@@ -146,6 +149,7 @@ def ensure_note_body_structure(content: str) -> str:
 
 def build_note_markdown(
     title: str,
+    status: str,
     topics: list[str],
     people: list[str],
     sources: list[str],
@@ -153,12 +157,14 @@ def build_note_markdown(
     source_refs: list[str],
     attachments: list[str],
     tags: list[str],
+    due_date: str | None,
     content: str,
 ) -> tuple[str, str]:
     slug = slugify(title)
     metadata = {
         "id": f"note-{slug}",
         "title": title,
+        "status": status,
         "topics": topics,
         "people": people,
         "sources": sources,
@@ -166,6 +172,7 @@ def build_note_markdown(
         "tags": tags,
         "source_refs": source_refs,
         "attachments": attachments,
+        "due_date": due_date,
         "created": today_iso(),
         "updated": today_iso(),
     }

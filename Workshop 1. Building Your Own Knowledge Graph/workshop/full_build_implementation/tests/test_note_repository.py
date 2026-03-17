@@ -85,6 +85,7 @@ def test_note_repository_updates_existing_note() -> None:
     updated = repository.update_note(
         slug="concept-personal-knowledge-base",
         title="Updated PKB Note",
+        status="in-progress",
         topics=["Knowledge Work"],
         people=["Workshop Instructor"],
         sources=["PKB Design Principles"],
@@ -92,9 +93,12 @@ def test_note_repository_updates_existing_note() -> None:
         source_refs=["data/sources/source-pkb-design-principles.md"],
         attachments=["data/attachments/concept-personal-knowledge-base/example.pdf"],
         tags=["updated"],
+        due_date="2026-03-25",
         content="Updated content for the repository test.",
     )
     assert updated.metadata.title == "Updated PKB Note"
+    assert updated.metadata.status == "in-progress"
+    assert updated.metadata.due_date == "2026-03-25"
     assert updated.summary == "Updated content for the repository test."
 
 
@@ -107,6 +111,7 @@ def test_note_repository_uses_plain_note_body_as_summary() -> None:
     note = repository.update_note(
         slug="concept-personal-knowledge-base",
         title="Plain Body Note",
+        status="done",
         topics=["Knowledge Work"],
         people=["Workshop Instructor"],
         sources=["PKB Design Principles"],
@@ -114,8 +119,10 @@ def test_note_repository_uses_plain_note_body_as_summary() -> None:
         source_refs=["data/sources/source-pkb-design-principles.md"],
         attachments=[],
         tags=["plain-body"],
+        due_date=None,
         content="This is the actual note body.\n\nIt has two paragraphs.",
     )
+    assert note.metadata.status == "done"
     assert note.summary == "This is the actual note body.\n\nIt has two paragraphs."
     assert note.raw_body.startswith("# Plain Body Note")
 

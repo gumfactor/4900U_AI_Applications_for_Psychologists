@@ -33,6 +33,7 @@ class NoteRepository:
     def save_draft(
         self,
         title: str,
+        status: str,
         topics: list[str],
         people: list[str],
         sources: list[str],
@@ -40,10 +41,12 @@ class NoteRepository:
         source_refs: list[str],
         attachments: list[str],
         tags: list[str],
+        due_date: str | None,
         content: str,
     ) -> Note:
         filename, markdown = build_note_markdown(
             title,
+            status,
             topics,
             people,
             sources,
@@ -51,6 +54,7 @@ class NoteRepository:
             source_refs,
             attachments,
             tags,
+            due_date,
             content,
         )
         path = self.notes_dir / filename
@@ -61,6 +65,7 @@ class NoteRepository:
         self,
         slug: str,
         title: str,
+        status: str,
         topics: list[str],
         people: list[str],
         sources: list[str],
@@ -68,6 +73,7 @@ class NoteRepository:
         source_refs: list[str],
         attachments: list[str],
         tags: list[str],
+        due_date: str | None,
         content: str,
     ) -> Note:
         note = self.get_note(slug)
@@ -75,6 +81,7 @@ class NoteRepository:
         metadata = {
             "id": note.metadata.id,
             "title": title,
+            "status": status,
             "topics": topics,
             "people": people,
             "sources": sources,
@@ -82,6 +89,7 @@ class NoteRepository:
             "tags": tags,
             "source_refs": source_refs,
             "attachments": attachments,
+            "due_date": due_date,
             "created": note.metadata.created,
             "updated": today_iso(),
         }

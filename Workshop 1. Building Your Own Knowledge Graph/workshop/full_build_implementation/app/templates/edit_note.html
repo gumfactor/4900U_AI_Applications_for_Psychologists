@@ -28,6 +28,16 @@
         <label>Projects
             <input name="projects" type="text" value="{{ note.metadata.projects | join(', ') }}">
         </label>
+        <label>Due Date
+            <input name="due_date" type="date" value="{{ note.metadata.due_date or '' }}">
+        </label>
+        <label>Status
+            <select name="status">
+                <option value="open"{% if note.metadata.status == "open" %} selected{% endif %}>Open</option>
+                <option value="in-progress"{% if note.metadata.status == "in-progress" %} selected{% endif %}>In Progress</option>
+                <option value="done"{% if note.metadata.status == "done" %} selected{% endif %}>Done</option>
+            </select>
+        </label>
         <label>Tags
             <input name="tags" type="text" value="{{ note.metadata.tags | join(', ') }}">
         </label>
@@ -80,6 +90,8 @@ editNoteForm?.addEventListener("submit", async (event) => {
     people: splitCsv(formData.get("people")),
     sources: splitCsv(formData.get("sources")),
     projects: splitCsv(formData.get("projects")),
+    due_date: formData.get("due_date") || null,
+    status: formData.get("status") || "open",
     tags: splitCsv(formData.get("tags")),
     source_refs: splitCsv(formData.get("source_refs")),
     attachments: splitCsv(formData.get("attachments")),
